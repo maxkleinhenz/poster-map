@@ -4,7 +4,7 @@
 </script>
 
 <nav class="bg-primary shadow-lg">
-	<div class="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
+	<div class="px-2 sm:px-6 lg:px-12 xl:px-24">
 		<div class="relative flex h-16 items-center justify-between">
 			<div class="flex flex-1 items-stretch justify-start gap-5">
 				<div class="flex flex-shrink-0 items-center">

@@ -3,12 +3,12 @@
 	import '../app.css';
 </script>
 
-<div class="app flex flex-col">
-	<header class="pb-3">
+<div class="app flex flex-col h-screen">
+	<header>
 		<AppNavBar />
 	</header>
 
-	<main class="max-w-5xl p-3 mx-auto w-full">
+	<main class="flex-1">
 		<slot />
 	</main>
 

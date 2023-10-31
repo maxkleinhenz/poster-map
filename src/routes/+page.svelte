@@ -2,7 +2,7 @@
 	import DashboardMapList from '$lib/components/Dashboard/DashboardMapList.svelte';
 </script>
 
-<section>
+<section class="page-wrapper">
 	<div class="grid grid-cols-1">
 		<section class="grid grid-cols-1 gap-2 pb-10">
 			<h1 class="text-3xl">Plakat-Karte</h1>

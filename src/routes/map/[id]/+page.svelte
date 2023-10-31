@@ -1,7 +1,9 @@
 <script lang="ts">
-	import type { PageData } from './$types';
-
-	export let data: PageData;
+	import MapPane from '$lib/components/Map/MapPane.svelte';
 </script>
 
-<h1>{data.map.id}</h1>
+<section class="flex flex-col h-full">
+	<div class="flex-1">
+		<MapPane />
+	</div>
+</section>
