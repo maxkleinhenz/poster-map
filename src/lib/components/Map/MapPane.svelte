@@ -1,15 +1,18 @@
-<script setup lang="ts">
+<script lang="ts">
 	import 'maplibre-gl/dist/maplibre-gl.css';
-	import { Map, NavigationControl, GeoJSONSource, LngLat, type LngLatLike } from 'maplibre-gl';
+	import { Map, GeoJSONSource, LngLat, type LngLatLike } from 'maplibre-gl';
 	import { onMount } from 'svelte';
 	import { PUBLIC_MAPTILER_API_KEY } from '$env/static/public';
 	import type { Feature, LineString } from 'geojson';
+	import MapActionBar, { type DrawMode } from './MapActionBar.svelte';
 
 	let route: Feature<LineString> = {
 		type: 'Feature',
 		geometry: { type: 'LineString', coordinates: [] },
 		properties: []
 	};
+
+	let drawMode: DrawMode = 'move';
 
 	onMount(() => {
 		const map = new Map({
@@ -19,11 +22,11 @@
 			zoom: 12
 		});
 
-		map.addControl(
-			new NavigationControl({
-				visualizePitch: true
-			})
-		);
+		// map.addControl(
+		// 	new NavigationControl({
+		// 		visualizePitch: true
+		// 	})
+		// );
 
 		map.on('load', (ev) => {
 			ev.target.addSource('route', {
@@ -47,6 +50,8 @@
 		});
 
 		map.on('mousemove', (ev) => {
+			if (drawMode != 'pen') return;
+
 			const lastPoint = route.geometry.coordinates.length
 				? route.geometry.coordinates[route.geometry.coordinates.length - 1]
 				: undefined;
@@ -67,4 +72,9 @@
 	});
 </script>
 
-<div id="map" class="h-full" />
+<div class="h-full relative">
+	<div id="map" class="h-full" />
+	<div class="absolute top-0 inset-x-0 my-5 mx-3">
+		<MapActionBar bind:drawMode />
+	</div>
+</div>
