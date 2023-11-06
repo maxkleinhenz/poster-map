@@ -1,26 +1,60 @@
 <script lang="ts">
 	import 'maplibre-gl/dist/maplibre-gl.css';
-	import { Map, GeoJSONSource, LngLat, type LngLatLike } from 'maplibre-gl';
+	import { Map, GeoJSONSource, LngLat, type LngLatLike, MapMouseEvent } from 'maplibre-gl';
 	import { onMount } from 'svelte';
 	import { PUBLIC_MAPTILER_API_KEY } from '$env/static/public';
-	import type { Feature, LineString } from 'geojson';
+	import type { Feature, LineString, FeatureCollection, Point, Polygon } from 'geojson';
 	import MapActionBar, { type DrawMode } from './MapActionBar.svelte';
 
-	let route: Feature<LineString> = {
-		type: 'Feature',
-		geometry: { type: 'LineString', coordinates: [] },
-		properties: []
+	let drawMode: DrawMode = 'move';
+	function drawModeChanged(drawMode: DrawMode) {
+		if (!map) return;
+
+		if (drawMode === 'move') {
+			map.dragPan.enable();
+			map.getCanvas().style.cursor = 'grab';
+		} else {
+			map.dragPan.disable();
+			map.getCanvas().style.cursor = 'default';
+		}
+	}
+
+	$: drawModeChanged(drawMode);
+
+	type MyGeometry = LineString; // Point | LineString | Polygon;
+
+	let featureCollection: FeatureCollection<MyGeometry> = {
+		type: 'FeatureCollection',
+		features: []
 	};
 
-	let drawMode: DrawMode = 'move';
+	const isDrawMouseButton = (ev: MapMouseEvent) => ev.originalEvent.buttons === 1;
+	let isDrawing = false;
 
+	function createNewRoute() {
+		const route: Feature<LineString> = {
+			type: 'Feature',
+			geometry: { type: 'LineString', coordinates: [] },
+			properties: {}
+		};
+		featureCollection.features.push(route);
+		isDrawing = true;
+	}
+
+	function finishNewRoute() {
+		isDrawing = false;
+	}
+
+	let map: Map;
 	onMount(() => {
-		const map = new Map({
+		map = new Map({
 			container: 'map',
 			style: `https://api.maptiler.com/maps/streets/style.json?key=${PUBLIC_MAPTILER_API_KEY}`,
 			center: [13.7373, 51.0504],
 			zoom: 12
 		});
+
+		drawModeChanged(drawMode);
 
 		// map.addControl(
 		// 	new NavigationControl({
@@ -29,9 +63,13 @@
 		// );
 
 		map.on('load', (ev) => {
+			map.dragRotate.disable();
+			map.keyboard.disableRotation();
+			map.touchPitch.disable();
+
 			ev.target.addSource('route', {
 				type: 'geojson',
-				data: route
+				data: featureCollection
 			});
 
 			ev.target.addLayer({
@@ -49,8 +87,26 @@
 			});
 		});
 
+		map.on('mousedown', (ev) => {
+			if (drawMode === 'pen' && isDrawMouseButton(ev) && !isDrawing) {
+				createNewRoute();
+			}
+		});
+
+		map.on('mouseup', (ev) => {
+			finishNewRoute();
+		});
+
+		map.on('mouseout', (ev) => {
+			finishNewRoute();
+		});
+
 		map.on('mousemove', (ev) => {
-			if (drawMode != 'pen') return;
+			if (!isDrawing || drawMode != 'pen' || featureCollection.features.length < 1) {
+				return;
+			}
+
+			const route = featureCollection.features[featureCollection.features.length - 1];
 
 			const lastPoint = route.geometry.coordinates.length
 				? route.geometry.coordinates[route.geometry.coordinates.length - 1]
@@ -62,7 +118,7 @@
 
 			if (distance > 5) {
 				route.geometry.coordinates?.push(ev.lngLat.toArray());
-				(map.getSource('route') as GeoJSONSource)?.setData(route);
+				(map.getSource('route') as GeoJSONSource)?.setData(featureCollection);
 			}
 		});
 
