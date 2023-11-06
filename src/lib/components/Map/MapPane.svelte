@@ -3,10 +3,12 @@
 	import { Map, GeoJSONSource, LngLat, type LngLatLike, MapMouseEvent } from 'maplibre-gl';
 	import { onMount } from 'svelte';
 	import { PUBLIC_MAPTILER_API_KEY } from '$env/static/public';
-	import type { Feature, LineString, FeatureCollection, Point, Polygon } from 'geojson';
-	import MapActionBar, { type DrawMode } from './MapActionBar.svelte';
+	import type { Feature, LineString, FeatureCollection } from 'geojson';
+	import MapActionBar, { type DrawMode } from '$lib/components/Map/MapActionBar.svelte';
 
 	let drawMode: DrawMode = 'move';
+	let drawColor = '#000';
+	let drawWidth = 8;
 	function drawModeChanged(drawMode: DrawMode) {
 		if (!map) return;
 
@@ -35,7 +37,12 @@
 		const route: Feature<LineString> = {
 			type: 'Feature',
 			geometry: { type: 'LineString', coordinates: [] },
-			properties: {}
+			properties: {
+				appearance: {
+					color: drawColor,
+					width: drawWidth
+				}
+			}
 		};
 		featureCollection.features.push(route);
 		isDrawing = true;
@@ -81,8 +88,8 @@
 					'line-cap': 'round'
 				},
 				paint: {
-					'line-color': '#888',
-					'line-width': 8
+					'line-color': ['get', 'color', ['get', 'appearance']],
+					'line-width': ['get', 'width', ['get', 'appearance']]
 				}
 			});
 		});
@@ -131,6 +138,6 @@
 <div class="h-full relative">
 	<div id="map" class="h-full" />
 	<div class="absolute top-0 inset-x-0 my-5 mx-3">
-		<MapActionBar bind:drawMode />
+		<MapActionBar bind:drawMode bind:drawColor bind:drawWidth />
 	</div>
 </div>

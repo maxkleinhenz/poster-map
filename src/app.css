@@ -4,6 +4,14 @@
 
 @layer base {
 	:root {
+		--juso-beere: 250 20 100;
+		--juso-hell-lila: 240 150 230;
+		--juso-rosa: 255 190 220;
+		--juso-rot: 227 6 19;
+		--juso-orange: 225 110 0;
+		--juso-creme: 250 210 180;
+		--juso-traube: 148 0 39;
+
 		--background: 0 0% 100%;
 		--foreground: 222.2 84% 4.9%;
 
