@@ -52,6 +52,20 @@
 		isDrawing = false;
 	}
 
+	function undoLastFeature() {
+		if (featureCollection.features.length <= 0) return;
+
+		finishNewRoute();
+
+		featureCollection.features = featureCollection.features.slice(0, -1);
+		setMapRoutes(featureCollection);
+	}
+
+	function setMapRoutes(newCollection: FeatureCollection<MyGeometry>) {
+		featureCollection = { ...newCollection };
+		(map.getSource('route') as GeoJSONSource)?.setData(newCollection);
+	}
+
 	let map: Map;
 	onMount(() => {
 		map = new Map({
@@ -125,7 +139,7 @@
 
 			if (distance > 5) {
 				route.geometry.coordinates?.push(ev.lngLat.toArray());
-				(map.getSource('route') as GeoJSONSource)?.setData(featureCollection);
+				setMapRoutes(featureCollection);
 			}
 		});
 
@@ -138,6 +152,6 @@
 <div class="h-full relative">
 	<div id="map" class="h-full" />
 	<div class="absolute top-0 inset-x-0 my-5 mx-3">
-		<MapActionBar bind:drawMode bind:drawColor bind:drawWidth />
+		<MapActionBar bind:drawMode bind:drawColor bind:drawWidth on:undo={undoLastFeature} />
 	</div>
 </div>
