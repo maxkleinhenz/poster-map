@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-	export type DrawMode = 'move' | 'pen' | 'highlighter' | 'street' | 'circle' | 'polygon';
+	export type DrawMode = 'move' | 'pen' | 'highlighter' | 'circle' | 'polygon';
 </script>
 
 <script lang="ts">
@@ -10,7 +10,6 @@
 		Move,
 		PenLine,
 		Radius,
-		Route,
 		Settings,
 		Share2,
 		Undo,
@@ -19,10 +18,15 @@
 	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/ui/popover';
 	import MapColorButton from './MapColorButton.svelte';
 	import { Slider } from '$lib/components/ui/slider';
+	import { createEventDispatcher } from 'svelte';
 
 	export let drawMode: DrawMode = 'move';
 	export let drawColor = '';
 	export let drawWidth = 8;
+
+	const dispatch = createEventDispatcher<{
+		undo: null;
+	}>();
 </script>
 
 <div class="w-full flex bg-white shadow-md p-2 rounded-lg items-center gap-5">
@@ -169,15 +173,6 @@
 			</Button>
 
 			<Button
-				title="Straßen folgen"
-				variant={drawMode === 'street' ? 'default' : 'ghost'}
-				size="icon"
-				on:click={() => (drawMode = 'street')}
-			>
-				<Route />
-			</Button>
-
-			<Button
 				title="Kreis"
 				variant={drawMode === 'circle' ? 'default' : 'ghost'}
 				size="icon"
@@ -196,7 +191,12 @@
 			</Button>
 		</div>
 		<div class="border-l border-primary flex gap-2 pl-2">
-			<Button variant="ghost" size="icon" title="Rückgängig machen">
+			<Button
+				variant="ghost"
+				size="icon"
+				title="Rückgängig machen"
+				on:click={() => dispatch('undo')}
+			>
 				<Undo />
 			</Button>
 		</div>
