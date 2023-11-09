@@ -8,7 +8,10 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --plugin-search-dir . --check . && eslint .",
-		"format": "prettier --plugin-search-dir . --write ."
+		"format": "prettier --plugin-search-dir . --write .",
+		"db:generate": "drizzle-kit generate:mysql",
+		"db:push": "drizzle-kit push:mysql",
+		"db:up": "drizzle-kit up:mysql"
 	},
 	"devDependencies": {
 		"@fontsource/fira-mono": "^5.0.8",
@@ -20,6 +23,7 @@
 		"@typescript-eslint/eslint-plugin": "^6.9.1",
 		"@typescript-eslint/parser": "^6.9.1",
 		"autoprefixer": "^10.4.16",
+		"drizzle-kit": "0.19.13",
 		"eslint": "^8.52.0",
 		"eslint-config-prettier": "^9.0.0",
 		"eslint-plugin-svelte": "^2.34.0",
@@ -35,8 +39,11 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"@planetscale/database": "^1.11.0",
 		"bits-ui": "^0.9.0",
 		"clsx": "^2.0.0",
+		"dotenv": "^16.3.1",
+		"drizzle-orm": "^0.28.6",
 		"lucide-svelte": "^0.291.0",
 		"maplibre-gl": "^3.5.2",
 		"tailwind-merge": "^2.0.0",
