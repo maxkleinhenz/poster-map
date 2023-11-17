@@ -1,41 +1,33 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import * as Form from '$lib/components/ui/form';
-	import { insertMapSchema, type InsertMapSchema } from '$lib/db/schema';
-	import type { ButtonEventHandler } from 'bits-ui/dist/bits/button';
+	import { insertMapSchema, type InsertMapSchema, type MapSchema } from '$lib/db/schema';
+	import { trpc } from '$lib/trpc';
 	import { ChevronRight, Plus } from 'lucide-svelte';
+	import { onMount } from 'svelte';
 	import type { SuperValidated } from 'sveltekit-superforms';
-	import { z } from 'zod';
 
-	type MapItem = {
-		id: number;
-		title: string;
-		desc: string;
-	};
+	let mapList: MapSchema[] = [];
 
-	let mapList: MapItem[] = [
-		{ id: 1, title: 'Kommunalwahl Flyer', desc: 'Flyergebiet für die Kommunalwahl' },
-		{ id: 2, title: 'Kommunalwahl Plakate', desc: 'Plakatgebiet für die Kommunalwahl' },
-		{ id: 3, title: 'Kommunalwahl Plakate', desc: 'Plakatgebiet für die Kommunalwahl' }
-	];
+	onMount(() => {
+		trpc.getAllMaps.query().then((maps) => (mapList = maps as MapSchema[]));
+	});
 
 	let openNewMapDialog = false;
-	let newMapData: InsertMapSchema = {
-		name: '',
-		description: undefined,
-		lat: 1,
-		lng: 2
-	};
-
-	let form: SuperValidated<typeof insertMapSchema>;
-
-	function onSubmit(ev: SubmitEvent) {
-		ev.preventDefault();
-
-		const result = insertMapSchema.safeParse(form);
-		console.log(result);
-		if (result.success) openNewMapDialog = false;
+	let form: SuperValidated<InsertMapSchema>;
+	function onSubmit(formData: FormData) {
+		const result = insertMapSchema.safeParse(Object.fromEntries(formData));
+		if (result.success) {
+			trpc.createMap
+				.mutate(result.data)
+				.then((id) => {
+					openNewMapDialog = false;
+					goto(`/map/${id}`);
+				})
+				.catch((err) => console.error(err));
+		}
 	}
 </script>
 
@@ -46,7 +38,18 @@
 				><Plus /> Neue Karte</Dialog.Trigger
 			>
 			<Dialog.Content>
-				<Form.Root {form} schema={insertMapSchema} let:config on:submit={onSubmit}>
+				<Form.Root
+					{form}
+					schema={insertMapSchema}
+					let:config
+					options={{
+						SPA: true,
+						validators: insertMapSchema,
+						onSubmit(input) {
+							onSubmit(input.formData);
+						}
+					}}
+				>
 					<Dialog.Header>
 						<Dialog.Title>Neue Karte anlegen</Dialog.Title>
 						<Dialog.Description>Erstelle eine neue Karte</Dialog.Description>
@@ -101,11 +104,13 @@
 		{#each mapList as item}
 			<a
 				href="/map/{item.id}"
-				class="first:rounded-t-lg last:rounded-b-lg flex p-3 border-t-2 first:border-0 hover:bg-slate-200"
+				class="first:rounded-t-lg last:rounded-b-lg flex p-3 border-t-2 first:border-0 hover:bg-slate-200 items-center"
 			>
 				<div class="flex-1">
-					<div class="font-medium">{item.title}</div>
-					<div>{item.desc}</div>
+					<div class="font-medium">{item.name}</div>
+					{#if item.description}
+						<div>{item.description}</div>
+					{/if}
 				</div>
 				<div>
 					<Button variant="secondary" href="/map/{item.id}">Anzeigen <ChevronRight /></Button>

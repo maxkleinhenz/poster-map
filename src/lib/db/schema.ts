@@ -1,5 +1,4 @@
-import { sql } from 'drizzle-orm';
-import { mysqlTable, serial, text, date, timestamp, float } from 'drizzle-orm/mysql-core';
+import { mysqlTable, serial, text, timestamp, float } from 'drizzle-orm/mysql-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
@@ -9,11 +8,18 @@ export const maps = mysqlTable('maps', {
 	description: text('description'),
 	lat: float('lat').notNull(),
 	lng: float('lng').notNull(),
-	created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`)
+	created_at: timestamp('created_at').defaultNow()
 });
 
 export const insertMapSchema = createInsertSchema(maps, {
+	id: z.never(),
 	lat: z.coerce.number(),
 	lng: z.coerce.number()
 });
-export type InsertMapSchema = z.infer<typeof insertMapSchema>;
+
+export type InsertMapSchema = typeof insertMapSchema;
+export type MapSchema = typeof maps.$inferSelect;
+
+// const columnNameSchema = z.string().refine((s) => Object.keys(maps.$inferSelect).includes(s));
+
+// type MapColumn = keyof typeof maps.$inferSelect;

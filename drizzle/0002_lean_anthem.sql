@@ -1,0 +1,1 @@
+ALTER TABLE `maps` MODIFY COLUMN `created_at` timestamp DEFAULT (now());

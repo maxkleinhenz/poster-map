@@ -8,6 +8,12 @@ dependencies:
   '@planetscale/database':
     specifier: ^1.11.0
     version: 1.11.0
+  '@trpc/client':
+    specifier: ^10.43.4
+    version: 10.43.4(@trpc/server@10.43.4)
+  '@trpc/server':
+    specifier: ^10.43.4
+    version: 10.43.4
   bits-ui:
     specifier: ^0.9.0
     version: 0.9.0(svelte@4.2.2)
@@ -599,6 +605,19 @@ packages:
       vitefu: 0.2.5(vite@4.5.0)
     transitivePeerDependencies:
       - supports-color
+
+  /@trpc/client@10.43.4(@trpc/server@10.43.4):
+    resolution: {integrity: sha512-no9B4OLoNhWz31alVpBzmbluoo67saTaegPyKZvNzsi15oVXIHnaUfy6OI5croM7+URC/SSpbWzknGAEr04iEw==}
+    peerDependencies:
+      '@trpc/server': 10.43.4
+    dependencies:
+      '@trpc/server': 10.43.4
+    dev: false
+
+  /@trpc/server@10.43.4:
+    resolution: {integrity: sha512-PySqtDKf3pVXBnPLiL7Q3CNXYFV3S6VrZRTFctnsrLEcQ3wOCLZSfKMwx2uHleZV/bwzSOtUJTZYolqY5JTDmQ==}
+    engines: {node: '>=18.0.0'}
+    dev: false
 
   /@types/cookie@0.5.3:
     resolution: {integrity: sha512-SLg07AS9z1Ab2LU+QxzU8RCmzsja80ywjf/t5oqw+4NSH20gIGlhLOrBDm1L3PBWzPa4+wkgFQVZAjE6Ioj2ug==}
