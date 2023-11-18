@@ -7,7 +7,8 @@
 	import { trpc } from '$lib/trpc';
 	import { ChevronRight, Plus } from 'lucide-svelte';
 	import { onMount } from 'svelte';
-	import type { SuperValidated } from 'sveltekit-superforms';
+	import { superValidateSync } from 'sveltekit-superforms/client';
+	import type { z } from 'zod';
 
 	let mapList: MapSchema[] = [];
 
@@ -16,7 +17,13 @@
 	});
 
 	let openNewMapDialog = false;
-	let form: SuperValidated<InsertMapSchema>;
+	const dialogValues: z.infer<InsertMapSchema> = {
+		name: '',
+		description: undefined,
+		lat: 13.7373,
+		lng: 51.0504
+	};
+	const data = superValidateSync(dialogValues, insertMapSchema);
 	function onSubmit(formData: FormData) {
 		const result = insertMapSchema.safeParse(Object.fromEntries(formData));
 		if (result.success) {
@@ -39,7 +46,7 @@
 			>
 			<Dialog.Content>
 				<Form.Root
-					{form}
+					form={data}
 					schema={insertMapSchema}
 					let:config
 					options={{
@@ -74,7 +81,7 @@
 								<Form.Field {config} name="lat">
 									<Form.Item>
 										<Form.Label>Latitude</Form.Label>
-										<Form.Input type="number" />
+										<Form.Input type="number" step="any" />
 										<Form.Validation />
 									</Form.Item>
 								</Form.Field>
@@ -83,7 +90,7 @@
 								<Form.Field {config} name="lng">
 									<Form.Item>
 										<Form.Label>Longitude</Form.Label>
-										<Form.Input type="number" />
+										<Form.Input type="number" step="any" />
 										<Form.Validation />
 									</Form.Item>
 								</Form.Field>
