@@ -1,6 +1,6 @@
 <script lang="ts">
 	import 'maplibre-gl/dist/maplibre-gl.css';
-	import { Map, GeoJSONSource, LngLat, type LngLatLike, MapMouseEvent } from 'maplibre-gl';
+	import { Map, GeoJSONSource, MapMouseEvent } from 'maplibre-gl';
 	import { onDestroy, onMount } from 'svelte';
 	import { PUBLIC_MAPTILER_API_KEY } from '$env/static/public';
 	import type { Feature, LineString, FeatureCollection } from 'geojson';
@@ -12,6 +12,7 @@
 	import type { Unsubscriber } from 'svelte/store';
 	import type { MapSchema } from '$lib/db/schema';
 	import { useMapPosition } from './useMapPosition';
+	import { type MyGeometry, calcNextCoordinate } from './MapPane';
 
 	const { positionStore, errorStore, startWatch } = usePositionStore();
 	const { setMarker, removeMarker } = useMapPosition();
@@ -34,8 +35,6 @@
 	}
 
 	$: drawModeChanged(drawMode);
-
-	type MyGeometry = LineString; // Point | LineString | Polygon;
 
 	let featureCollection: FeatureCollection<MyGeometry> = {
 		type: 'FeatureCollection',
@@ -99,14 +98,14 @@
 		positionErrorUnsubscriber = errorStore.subscribe((err) => {
 			positionError = err;
 			if (err) {
-				stopWatchinPosition();
+				stopWatchingPosition();
 			}
 		});
 
 		startWatch();
 	}
 
-	function stopWatchinPosition() {
+	function stopWatchingPosition() {
 		if (positionErrorUnsubscriber) {
 			positionErrorUnsubscriber();
 			positionErrorUnsubscriber = undefined;
@@ -125,26 +124,18 @@
 	let map: Map | undefined;
 
 	function mapOnMove(ev: MapMouseEvent & Object) {
-		if (!isDrawing || drawMode != 'pen' || featureCollection.features.length < 1) {
+		if (!isDrawing || drawMode != 'pen' || featureCollection.features.length < 1 || !map) {
 			return;
 		}
 
-		ev.originalEvent.offsetY;
-
-		const route = featureCollection.features[featureCollection.features.length - 1];
-
-		const lastPoint = route.geometry.coordinates.length
-			? route.geometry.coordinates[route.geometry.coordinates.length - 1]
-			: undefined;
-		const lnglat = ev.lngLat;
-		const distance = lastPoint
-			? lnglat.distanceTo(LngLat.convert(lastPoint as LngLatLike))
-			: Number.MAX_SAFE_INTEGER;
-
-		if (distance > 5) {
-			route.geometry.coordinates?.push(ev.lngLat.toArray());
-			setMapRoutes(featureCollection);
+		const nextCoords = calcNextCoordinate(ev, map, featureCollection);
+		if (!nextCoords) {
+			return;
 		}
+
+		const currentRoute = featureCollection.features[featureCollection.features.length - 1];
+		currentRoute.geometry.coordinates?.push(nextCoords.toArray());
+		setMapRoutes(featureCollection);
 	}
 
 	onMount(() => {
@@ -209,7 +200,7 @@
 	});
 
 	onDestroy(() => {
-		stopWatchinPosition();
+		stopWatchingPosition();
 	});
 </script>
 
@@ -224,7 +215,7 @@
 		<Button
 			size="icon"
 			variant={positionUnsubscriber ? 'default' : 'ghost'}
-			on:click={() => (positionUnsubscriber ? stopWatchinPosition() : startWatchingPosition())}
+			on:click={() => (positionUnsubscriber ? stopWatchingPosition() : startWatchingPosition())}
 		>
 			{#if positionUnsubscriber}
 				<LocateFixed />
