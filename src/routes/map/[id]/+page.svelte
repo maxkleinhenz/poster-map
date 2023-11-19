@@ -5,9 +5,7 @@
 </script>
 
 <section class="flex flex-col h-full">
-	<!-- {#if map} -->
 	<div class="flex-1">
 		<MapPane campaign={data.map} />
 	</div>
-	<!-- {/if} -->
 </section>

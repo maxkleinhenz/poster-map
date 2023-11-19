@@ -11,8 +11,10 @@
 	import { usePositionStore } from '$lib/stores/position-store';
 	import type { Unsubscriber } from 'svelte/store';
 	import type { MapSchema } from '$lib/db/schema';
+	import { useMapPosition } from './useMapPosition';
 
 	const { positionStore, errorStore, startWatch } = usePositionStore();
+	const { setMarker, removeMarker } = useMapPosition();
 
 	export let campaign: MapSchema;
 
@@ -82,9 +84,17 @@
 	let positionError: GeolocationPositionError | undefined = undefined;
 	function startWatchingPosition() {
 		positionUnsubscriber = positionStore.subscribe((pos) => {
-			if (pos && !positionUnsubscriber) {
-				map?.setCenter({ lng: pos.coords.longitude, lat: pos.coords.latitude });
+			if (!pos || !map) return;
+
+			if (!positionUnsubscriber) {
+				// fly to point only fro the first time
+				map.flyTo({
+					center: { lng: pos.coords.longitude, lat: pos.coords.latitude },
+					animate: true
+				});
 			}
+
+			setMarker(map, pos.coords);
 		});
 		positionErrorUnsubscriber = errorStore.subscribe((err) => {
 			positionError = err;
@@ -105,6 +115,10 @@
 		if (positionUnsubscriber) {
 			positionUnsubscriber();
 			positionUnsubscriber = undefined;
+		}
+
+		if (map) {
+			removeMarker(map);
 		}
 	}
 

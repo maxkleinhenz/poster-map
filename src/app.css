@@ -85,6 +85,13 @@
 	}
 }
 
+@layer components {
+	.position-marker {
+		@apply z-10 h-6 w-6 rounded-full border-[3px] border-white bg-blue-600;
+		box-shadow: 0 0 7px 3px #0000002e;
+	}
+}
+
 @layer utilities {
 	.page-wrapper {
 		@apply pt-10 px-2 sm:px-6 md:px-10 max-w-5xl mx-auto w-full;
