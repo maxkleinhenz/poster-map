@@ -108,21 +108,24 @@
 		</Dialog.Root>
 	</div>
 	<div class="border-2 rounded-lg">
-		{#each mapList as item}
-			<a
-				href="/map/{item.id}"
-				class="first:rounded-t-lg last:rounded-b-lg flex p-3 border-t-2 first:border-0 hover:bg-slate-200 items-center"
-			>
-				<div class="flex-1">
-					<div class="font-medium">{item.name}</div>
-					{#if item.description}
-						<div>{item.description}</div>
-					{/if}
-				</div>
-				<div>
-					<Button variant="secondary" href="/map/{item.id}">Anzeigen <ChevronRight /></Button>
-				</div>
-			</a>
-		{/each}
+		{#if mapList?.length}
+			{#each mapList as item}
+				<a
+					href="/map/{item.id}"
+					class="first:rounded-t-lg last:rounded-b-lg flex p-3 border-t-2 first:border-0 hover:bg-slate-200 items-center"
+				>
+					<div class="flex-1">
+						<div class="font-medium">{item.name}</div>
+						{#if item.description}
+							<div>{item.description}</div>
+						{/if}
+					</div>
+					<div>
+						<Button variant="secondary" href="/map/{item.id}">Anzeigen <ChevronRight /></Button>
+					</div>
+				</a>
+			{/each}
+		{:else}
+			<p>Keine Karten vorhanden</p>{/if}
 	</div>
 </div>

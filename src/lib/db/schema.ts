@@ -1,6 +1,7 @@
 import { mysqlTable, serial, text, timestamp, float } from 'drizzle-orm/mysql-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
+import { asOptionalString } from './helper';
 
 export const maps = mysqlTable('maps', {
 	id: serial('id').autoincrement().primaryKey(),
@@ -13,6 +14,8 @@ export const maps = mysqlTable('maps', {
 
 export const insertMapSchema = createInsertSchema(maps, {
 	id: z.never(),
+	name: z.string().trim().min(1),
+	description: asOptionalString(z.string().trim().min(1)),
 	lat: z.coerce.number(),
 	lng: z.coerce.number()
 });

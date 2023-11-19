@@ -10,8 +10,11 @@
 	import MapActionBar, { type DrawMode } from '$lib/components/Map/MapActionBar.svelte';
 	import { usePositionStore } from '$lib/stores/position-store';
 	import type { Unsubscriber } from 'svelte/store';
+	import type { MapSchema } from '$lib/db/schema';
 
 	const { positionStore, errorStore, startWatch } = usePositionStore();
+
+	export let campaign: MapSchema;
 
 	let drawMode: DrawMode = 'move';
 	let drawColor = '#000';
@@ -134,7 +137,7 @@
 		map = new Map({
 			container: 'map',
 			style: `https://api.maptiler.com/maps/streets/style.json?key=${PUBLIC_MAPTILER_API_KEY}`,
-			center: [13.7373, 51.0504],
+			center: [campaign.lat, campaign.lng],
 			zoom: 12
 		});
 
