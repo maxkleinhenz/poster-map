@@ -51,6 +51,7 @@
 		"formsnap": "^0.4.1",
 		"lucide-svelte": "^0.291.0",
 		"maplibre-gl": "^3.5.2",
+		"short-unique-id": "^5.0.3",
 		"sveltekit-superforms": "^1.10.2",
 		"tailwind-merge": "^2.0.0",
 		"tailwind-variants": "^0.1.18",

@@ -1,28 +1,27 @@
 <script lang="ts">
 	import 'maplibre-gl/dist/maplibre-gl.css';
-	import { Map, GeoJSONSource, MapMouseEvent } from 'maplibre-gl';
+	import { Map } from 'maplibre-gl';
 	import { onDestroy, onMount } from 'svelte';
 	import { PUBLIC_MAPTILER_API_KEY } from '$env/static/public';
-	import type { Feature, LineString, FeatureCollection } from 'geojson';
 	import { Locate, LocateFixed, ZoomIn, ZoomOut } from 'lucide-svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import { Button } from '$lib/components/ui/button';
-	import MapActionBar, { type DrawMode } from '$lib/components/Map/MapActionBar.svelte';
+	import MapActionBar from '$lib/components/Map/MapActionBar.svelte';
 	import { usePositionStore } from '$lib/stores/position-store';
 	import type { Unsubscriber } from 'svelte/store';
 	import type { MapSchema } from '$lib/db/schema';
 	import { useMapPosition } from './useMapPosition';
-	import { type MyGeometry, calcNextCoordinate } from './MapPane';
+	import { useMapDrawing } from './useMapDrawing';
 
+	const { featureCollection, drawMode, isDrawing, initDrawing, undoLastFeature } = useMapDrawing();
 	const { positionStore, errorStore, startWatch } = usePositionStore();
 	const { setMarker, removeMarker } = useMapPosition();
 
 	export let campaign: MapSchema;
 
-	let drawMode: DrawMode = 'move';
-	let drawColor = '#000';
-	let drawWidth = 8;
-	function drawModeChanged(drawMode: DrawMode) {
+	let map: Map | undefined;
+
+	drawMode.subscribe((drawMode) => {
 		if (!map) return;
 
 		if (drawMode === 'move') {
@@ -32,51 +31,7 @@
 			map.dragPan.disable();
 			map.getCanvas().style.cursor = 'default';
 		}
-	}
-
-	$: drawModeChanged(drawMode);
-
-	let featureCollection: FeatureCollection<MyGeometry> = {
-		type: 'FeatureCollection',
-		features: []
-	};
-
-	const isDrawMouseButton = (ev: MapMouseEvent) => ev.originalEvent.buttons === 1;
-	let isDrawing = false;
-
-	function createNewRoute() {
-		const route: Feature<LineString> = {
-			type: 'Feature',
-			geometry: { type: 'LineString', coordinates: [] },
-			properties: {
-				appearance: {
-					color: drawColor,
-					width: drawWidth
-				}
-			}
-		};
-		featureCollection.features.push(route);
-		isDrawing = true;
-	}
-
-	function finishNewRoute() {
-		isDrawing = false;
-		map?.off('mousemove', mapOnMove);
-	}
-
-	function undoLastFeature() {
-		if (featureCollection.features.length <= 0) return;
-
-		finishNewRoute();
-
-		featureCollection.features = featureCollection.features.slice(0, -1);
-		setMapRoutes(featureCollection);
-	}
-
-	function setMapRoutes(newCollection: FeatureCollection<MyGeometry>) {
-		featureCollection = { ...newCollection };
-		(map?.getSource('route') as GeoJSONSource)?.setData(newCollection);
-	}
+	});
 
 	let positionUnsubscriber: Unsubscriber | undefined = undefined;
 	let positionErrorUnsubscriber: Unsubscriber | undefined;
@@ -121,23 +76,6 @@
 		}
 	}
 
-	let map: Map | undefined;
-
-	function mapOnMove(ev: MapMouseEvent & Object) {
-		if (!isDrawing || drawMode != 'pen' || featureCollection.features.length < 1 || !map) {
-			return;
-		}
-
-		const nextCoords = calcNextCoordinate(ev, map, featureCollection);
-		if (!nextCoords) {
-			return;
-		}
-
-		const currentRoute = featureCollection.features[featureCollection.features.length - 1];
-		currentRoute.geometry.coordinates?.push(nextCoords.toArray());
-		setMapRoutes(featureCollection);
-	}
-
 	onMount(() => {
 		map = new Map({
 			container: 'map',
@@ -146,52 +84,77 @@
 			zoom: 12
 		});
 
-		drawModeChanged(drawMode);
-
 		// map.addControl(
 		// 	new NavigationControl({
 		// 		visualizePitch: true
 		// 	})
 		// );
 
-		map.on('load', (ev) => {
+		map.on('load', (ev): void => {
 			map?.dragRotate.disable();
 			map?.keyboard.disableRotation();
 			map?.touchPitch.disable();
 
-			ev.target.addSource('route', {
+			ev.target.addSource('route-source', {
 				type: 'geojson',
-				data: featureCollection
+				data: $featureCollection
 			});
 
 			ev.target.addLayer({
-				id: 'route',
+				id: 'route-hover',
 				type: 'line',
-				source: 'route',
+				source: 'route-source',
 				layout: {
 					'line-join': 'round',
 					'line-cap': 'round'
 				},
 				paint: {
 					'line-color': ['get', 'color', ['get', 'appearance']],
+					'line-width': ['+', ['get', 'width', ['get', 'appearance']], 10],
+					'line-opacity': 0.3
+				}
+			});
+
+			ev.target.addLayer({
+				id: 'route-layer',
+				type: 'line',
+				source: 'route-source',
+				layout: {
+					'line-join': 'round',
+					'line-cap': 'round',
+					'line-sort-key': 99
+				},
+				paint: {
+					'line-color': ['get', 'color', ['get', 'appearance']],
 					'line-width': ['get', 'width', ['get', 'appearance']]
 				}
 			});
+
+			initDrawing(ev.target);
 		});
 
-		map.on('mousedown', (ev) => {
-			if (drawMode === 'pen' && isDrawMouseButton(ev) && !isDrawing) {
-				createNewRoute();
-
-				map?.on('mousemove', mapOnMove);
-				map?.once('mouseup', (ev) => {
-					finishNewRoute();
-				});
-
-				map?.once('mouseout', (ev) => {
-					finishNewRoute();
-				});
+		// hightlight route
+		map.on('mousemove', (ev): void => {
+			if ($isDrawing) {
+				return;
 			}
+
+			const features = map?.queryRenderedFeatures(
+				[
+					[ev.point.x - 5, ev.point.y - 5],
+					[ev.point.x + 5, ev.point.y + 5]
+				],
+				{ layers: ['route-layer'] }
+			);
+			if (features && features?.length > 0) {
+				const id = features[0].id;
+				if (id) {
+					map?.setFilter('route-hover', ['==', ['id'], id]);
+					return;
+				}
+			}
+
+			map?.setFilter('route-hover', ['==', ['id'], 0]);
 		});
 
 		map.on('touchmove', (ev) => {
@@ -207,7 +170,7 @@
 <div class="h-full relative">
 	<div id="map" class="h-full" />
 	<div class="flex flex-col absolute top-3 inset-x-3 space-y-4">
-		<MapActionBar bind:drawMode bind:drawColor bind:drawWidth on:undo={undoLastFeature} />
+		<MapActionBar on:undo={() => undoLastFeature()} />
 	</div>
 	<div class="absolute top-20 right-3 flex flex-col bg-white p-2 rounded-lg shadow-md gap-2">
 		<Button size="icon" variant="ghost" on:click={() => map?.zoomIn()}><ZoomIn /></Button>
