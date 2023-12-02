@@ -1,29 +1,24 @@
-import type { Feature, LineString, FeatureCollection } from 'geojson';
+import type { Feature, FeatureCollection, GeoJsonProperties, MultiLineString } from 'geojson';
 import {
 	LngLat,
 	type GeoJSONSource,
 	type Map,
 	type MapMouseEvent,
-	type LngLatLike
+	type LngLatLike,
+	type GeoJSONFeatureDiff
 } from 'maplibre-gl';
 import ShortUniqueId from 'short-unique-id';
 import { get, readonly, writable } from 'svelte/store';
+import { useMapHighlighting } from './useMapHighlighting';
+import { drawColor, drawMode, drawWidth, isDrawing } from '$lib/stores/useMapDrawingStore';
 
 export type DrawMode = 'move' | 'pen' | 'highlighter' | 'circle' | 'polygon';
-
-const featureCollection = writable<FeatureCollection<LineString>>({
-	type: 'FeatureCollection',
-	features: []
-});
-const drawMode = writable<DrawMode>('move');
-const drawColor = writable<string>('#000');
-const drawWidth = writable<number>(8);
-const isDrawing = writable<boolean>(false);
+export type MyGeometry = MultiLineString;
 
 const isDrawMouseButton = (ev: MapMouseEvent) => ev.originalEvent.buttons === 1;
 
 const uid = new ShortUniqueId({
-	length: 10,
+	length: 16,
 	dictionary: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 });
 
@@ -35,21 +30,16 @@ const pixelDistance = (pointOne: { x: number; y: number }, pointTwo: { x: number
 	const x = y2 - y1;
 	return Math.sqrt(x * x + y * y);
 };
-function calcNextCoordinate(
-	ev: MapMouseEvent & Object,
-	map: Map,
-	featureCollection: FeatureCollection<LineString>
-) {
-	const route = featureCollection.features[featureCollection.features.length - 1];
-
-	const lastPosition = route.geometry.coordinates.length
-		? route.geometry.coordinates[route.geometry.coordinates.length - 1]
+function calcNextCoordinate(ev: MapMouseEvent & Object, map: Map, geometry: MultiLineString) {
+	const lastPosition = geometry.coordinates.length
+		? geometry.coordinates[geometry.coordinates.length - 1]
 		: undefined;
 
-	if (!lastPosition) {
+	if (!lastPosition || lastPosition.length <= 0) {
 		return ev.lngLat;
 	} else {
-		const lastPoint = map?.project(LngLat.convert(lastPosition as LngLatLike));
+		const lastPositionIndex = lastPosition.length - 1;
+		const lastPoint = map?.project(LngLat.convert(lastPosition[lastPositionIndex] as LngLatLike));
 		const distance = pixelDistance(lastPoint, { x: ev.point.x, y: ev.point.y });
 
 		if (distance >= minPixelDistances) {
@@ -60,18 +50,36 @@ function calcNextCoordinate(
 	return undefined;
 }
 
-export function useMapDrawing() {
+function isMultilineStringFeature(feature: Feature): feature is Feature<MultiLineString> {
+	return feature.geometry.type === 'MultiLineString';
+}
+
+export function useMapDrawing(
+	featureCollection: FeatureCollection<MyGeometry>,
+	routeSource: string
+) {
+	const { highlight, initHighlighting } = useMapHighlighting(
+		readonly(isDrawing),
+		featureCollection
+	);
 	let mymap: Map | undefined;
 
-	function setFeatureCollection(newCollection: FeatureCollection<LineString>) {
-		featureCollection.set({ ...newCollection });
-		(mymap?.getSource('route-source') as GeoJSONSource)?.setData(newCollection);
+	function setFeatureCollection(diff: {
+		add?: Feature<MyGeometry>[];
+		update?: GeoJSONFeatureDiff[];
+	}) {
+		if (diff.add) {
+			featureCollection.features.push(...diff.add);
+		}
+
+		const source = mymap?.getSource(routeSource) as GeoJSONSource;
+		source?.updateData(diff);
 	}
 
-	function createNewRoute() {
-		const route: Feature<LineString> = {
+	function createNewRoute(): Feature<MultiLineString, GeoJsonProperties> {
+		const newRoute: Feature<MyGeometry> = {
 			type: 'Feature',
-			geometry: { type: 'LineString', coordinates: [] },
+			geometry: { type: 'MultiLineString', coordinates: [[]] },
 			id: uid.rnd(),
 			properties: {
 				appearance: {
@@ -81,47 +89,73 @@ export function useMapDrawing() {
 			}
 		};
 
-		const featureColl = get(featureCollection);
-		featureColl.features.push(route);
-		setFeatureCollection(featureColl);
-
-		isDrawing.set(true);
+		setFeatureCollection({
+			add: [newRoute]
+		});
+		return newRoute;
 	}
 
 	function onMoveDrawing(ev: MapMouseEvent & Object) {
-		if (
-			!get(isDrawing) ||
-			get(drawMode) != 'pen' ||
-			get(featureCollection).features.length < 1 ||
-			!mymap
-		) {
+		if (!get(isDrawing) || get(drawMode) != 'pen' || featureCollection.features.length < 1) {
 			return;
 		}
 
-		const nextCoords = calcNextCoordinate(ev, mymap, get(featureCollection));
+		const feature = featureCollection.features[featureCollection.features.length - 1];
+		draw(ev, feature);
+	}
+
+	function onMoveDrawingAppend(ev: MapMouseEvent & Object) {
+		if (!get(isDrawing) || get(drawMode) != 'pen') {
+			return;
+		}
+
+		const geojson = get(highlight);
+		if (geojson) {
+			if (isMultilineStringFeature(geojson)) {
+				draw(ev, geojson);
+			}
+		}
+		if (geojson && isMultilineStringFeature(geojson)) {
+			draw(ev, geojson);
+		}
+	}
+
+	function draw(ev: MapMouseEvent, feature: Feature<MyGeometry>) {
+		if (!mymap) {
+			return;
+		}
+
+		const nextCoords = calcNextCoordinate(ev, mymap, feature.geometry);
 		if (!nextCoords) {
 			return;
 		}
 
-		const featureColl = get(featureCollection);
-		const currentRoute = featureColl.features[featureColl.features.length - 1];
-		currentRoute.geometry.coordinates?.push(nextCoords.toArray());
-		setFeatureCollection(featureColl);
+		const lastCoordIndex = feature.geometry.coordinates.length - 1;
+		feature.geometry.coordinates[lastCoordIndex].push(nextCoords.toArray());
+
+		setFeatureCollection({
+			update: [
+				{
+					id: feature.id ?? '',
+					newGeometry: feature.geometry
+				}
+			]
+		});
 	}
 
-	function finishNewRoute() {
+	function finishDrawing() {
 		isDrawing.set(false);
 		mymap?.off('mousemove', onMoveDrawing);
+		mymap?.off('mousemove', onMoveDrawingAppend);
 	}
 
 	function undoLastFeature() {
-		const featureColl = get(featureCollection);
-		if (featureColl.features.length <= 0) return;
+		if (featureCollection.features.length <= 0) return;
 
-		finishNewRoute();
+		finishDrawing();
 
-		featureColl.features = featureColl.features.slice(0, -1);
-		setFeatureCollection(featureColl);
+		featureCollection.features = featureCollection.features.slice(0, -1);
+		//setFeatureCollection(featureColl);
 	}
 
 	function initDrawing(map: Map) {
@@ -129,27 +163,36 @@ export function useMapDrawing() {
 
 		map.on('mousedown', (ev) => {
 			if (get(drawMode) === 'pen' && isDrawMouseButton(ev) && !get(isDrawing)) {
-				createNewRoute();
+				isDrawing.set(true);
+				const highlighted = get(highlight);
+				if (highlighted) {
+					if (isMultilineStringFeature(highlighted)) {
+						highlighted.geometry.coordinates.push([]);
+					}
+					map?.on('mousemove', onMoveDrawingAppend);
+				} else {
+					createNewRoute();
+					map?.on('mousemove', onMoveDrawing);
+				}
 
-				map?.on('mousemove', onMoveDrawing);
 				map?.once('mouseup', (ev) => {
-					finishNewRoute();
+					finishDrawing();
 				});
 
 				map?.once('mouseout', (ev) => {
-					finishNewRoute();
+					finishDrawing();
 				});
 			}
 		});
 	}
 
 	return {
-		featureCollection,
 		drawMode,
 		drawColor,
 		drawWidth,
 		isDrawing: readonly(isDrawing),
 		initDrawing,
-		undoLastFeature
+		undoLastFeature,
+		initHighlighting
 	};
 }

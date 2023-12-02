@@ -19,9 +19,7 @@
 	import MapColorButton from './MapColorButton.svelte';
 	import { Slider } from '$lib/components/ui/slider';
 	import { createEventDispatcher } from 'svelte';
-	import { useMapDrawing } from './useMapDrawing';
-
-	const { drawMode, drawColor, drawWidth } = useMapDrawing();
+	import { drawColor, drawMode, drawWidth } from '$lib/stores/useMapDrawingStore';
 
 	const dispatch = createEventDispatcher<{
 		undo: null;

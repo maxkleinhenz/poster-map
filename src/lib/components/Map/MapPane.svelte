@@ -11,15 +11,27 @@
 	import type { Unsubscriber } from 'svelte/store';
 	import type { MapSchema } from '$lib/db/schema';
 	import { useMapPosition } from './useMapPosition';
-	import { useMapDrawing } from './useMapDrawing';
+	import { useMapDrawing, type MyGeometry } from './useMapDrawing';
+	import type { FeatureCollection } from 'geojson';
 
-	const { featureCollection, drawMode, isDrawing, initDrawing, undoLastFeature } = useMapDrawing();
+	let map: Map | undefined;
+	const featureCollection: FeatureCollection<MyGeometry> = {
+		type: 'FeatureCollection',
+		features: []
+	};
+
+	const routeSource = 'route-source';
+	const routeLayer = 'route-layer';
+	const hightlightLayer = 'route-hover';
+
+	const { drawMode, initDrawing, undoLastFeature, initHighlighting } = useMapDrawing(
+		featureCollection,
+		routeSource
+	);
 	const { positionStore, errorStore, startWatch } = usePositionStore();
 	const { setMarker, removeMarker } = useMapPosition();
 
 	export let campaign: MapSchema;
-
-	let map: Map | undefined;
 
 	drawMode.subscribe((drawMode) => {
 		if (!map) return;
@@ -95,15 +107,15 @@
 			map?.keyboard.disableRotation();
 			map?.touchPitch.disable();
 
-			ev.target.addSource('route-source', {
+			ev.target.addSource(routeSource, {
 				type: 'geojson',
-				data: $featureCollection
+				data: featureCollection
 			});
 
 			ev.target.addLayer({
-				id: 'route-hover',
+				id: hightlightLayer,
 				type: 'line',
-				source: 'route-source',
+				source: routeSource,
 				layout: {
 					'line-join': 'round',
 					'line-cap': 'round'
@@ -116,9 +128,9 @@
 			});
 
 			ev.target.addLayer({
-				id: 'route-layer',
+				id: routeLayer,
 				type: 'line',
-				source: 'route-source',
+				source: routeSource,
 				layout: {
 					'line-join': 'round',
 					'line-cap': 'round',
@@ -131,30 +143,7 @@
 			});
 
 			initDrawing(ev.target);
-		});
-
-		// hightlight route
-		map.on('mousemove', (ev): void => {
-			if ($isDrawing) {
-				return;
-			}
-
-			const features = map?.queryRenderedFeatures(
-				[
-					[ev.point.x - 5, ev.point.y - 5],
-					[ev.point.x + 5, ev.point.y + 5]
-				],
-				{ layers: ['route-layer'] }
-			);
-			if (features && features?.length > 0) {
-				const id = features[0].id;
-				if (id) {
-					map?.setFilter('route-hover', ['==', ['id'], id]);
-					return;
-				}
-			}
-
-			map?.setFilter('route-hover', ['==', ['id'], 0]);
+			initHighlighting(ev.target, routeLayer, hightlightLayer);
 		});
 
 		map.on('touchmove', (ev) => {
