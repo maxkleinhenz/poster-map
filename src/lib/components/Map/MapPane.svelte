@@ -7,7 +7,7 @@
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import { Button } from '$lib/components/ui/button';
 	import MapActionBar from '$lib/components/Map/MapActionBar.svelte';
-	import { usePositionStore } from '$lib/stores/position-store';
+	import { usePositionStore } from '$lib/stores/usePositionStore';
 	import type { Unsubscriber } from 'svelte/store';
 	import type { MapSchema } from '$lib/db/schema';
 	import { useMapPosition } from './useMapPosition';
