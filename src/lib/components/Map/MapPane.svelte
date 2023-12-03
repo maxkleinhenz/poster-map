@@ -11,23 +11,16 @@
 	import type { Unsubscriber } from 'svelte/store';
 	import type { MapSchema } from '$lib/db/schema';
 	import { useMapPosition } from './useMapPosition';
-	import { useMapDrawing, type MyGeometry } from './useMapDrawing';
-	import type { FeatureCollection } from 'geojson';
+	import { useMapDrawing } from './useMapDrawing';
+	import { featureCollection } from '$lib/stores/useMapDrawingStore';
 
 	let map: Map | undefined;
-	const featureCollection: FeatureCollection<MyGeometry> = {
-		type: 'FeatureCollection',
-		features: []
-	};
 
 	const routeSource = 'route-source';
 	const routeLayer = 'route-layer';
 	const hightlightLayer = 'route-hover';
 
-	const { drawMode, initDrawing, undoLastFeature, initHighlighting } = useMapDrawing(
-		featureCollection,
-		routeSource
-	);
+	const { drawMode, initDrawing, undoLastFeature, initHighlighting } = useMapDrawing(routeSource);
 	const { positionStore, errorStore, startWatch } = usePositionStore();
 	const { setMarker, removeMarker } = useMapPosition();
 
@@ -109,7 +102,7 @@
 
 			ev.target.addSource(routeSource, {
 				type: 'geojson',
-				data: featureCollection
+				data: $featureCollection
 			});
 
 			ev.target.addLayer({

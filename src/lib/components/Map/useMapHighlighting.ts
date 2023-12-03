@@ -1,13 +1,11 @@
 import { get, readonly, writable, type Readable } from 'svelte/store';
 import type { Map, MapMouseEvent } from 'maplibre-gl';
-import type { Feature, FeatureCollection, Geometry } from 'geojson';
+import type { Feature } from 'geojson';
+import { featureCollection } from '$lib/stores/useMapDrawingStore';
 
 const highlight = writable<Feature | undefined>(undefined);
 
-export function useMapHighlighting(
-	isDrawing: Readable<boolean>,
-	featureCollection: FeatureCollection<Geometry>
-) {
+export function useMapHighlighting(isDrawing: Readable<boolean>) {
 	let _routeLayer: string;
 	let _hightlightLayer: string;
 
@@ -35,7 +33,7 @@ export function useMapHighlighting(
 	function setHightlight(map: Map, feature: Feature) {
 		const id = feature.id;
 		if (id) {
-			const toHighlight = featureCollection.features.find((f) => f.id == id);
+			const toHighlight = get(featureCollection).features.find((f) => f.id == id);
 			map.setFilter(_hightlightLayer, ['==', ['id'], id]);
 			highlight.set(toHighlight);
 		}
