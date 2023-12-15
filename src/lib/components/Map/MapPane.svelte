@@ -9,7 +9,7 @@
 	import MapActionBar from '$lib/components/Map/MapActionBar.svelte';
 	import type { MapSchema } from '$lib/db/schema';
 	import { useMapPosition } from './useMapPosition';
-	import { useMapDrawing } from './useMapDrawing';
+	import { useMapDrawing, type DrawMode } from './useMapDrawing';
 	import { featureCollection } from '$lib/stores/useMapDrawingStore';
 	import { get } from 'svelte/store';
 
@@ -30,6 +30,21 @@
 	} = useMapPosition();
 
 	export let campaign: MapSchema;
+
+	let tempDrawMode: DrawMode | undefined = undefined;
+	function onKeyDown(e: KeyboardEvent) {
+		const d = get(drawMode);
+		if (d !== 'move' && e.code === 'Space') {
+			tempDrawMode = d;
+			drawMode.set('move');
+		}
+	}
+	function onKeyUp(e: KeyboardEvent) {
+		if (tempDrawMode) {
+			drawMode.set(tempDrawMode);
+			tempDrawMode = undefined;
+		}
+	}
 
 	const drawModeUnsubscriber = drawMode.subscribe((drawMode) => {
 		if (!map) return;
@@ -127,6 +142,11 @@
 		positionStateUnsubscriber();
 	});
 </script>
+
+<svelte:window
+	on:keydown|preventDefault|stopPropagation={onKeyDown}
+	on:keyup|preventDefault|stopPropagation|={onKeyUp}
+/>
 
 <div class="h-full relative">
 	<div id="map" class="h-full" />
