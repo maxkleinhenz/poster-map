@@ -29,8 +29,9 @@ export type DrawResult = {
 export interface Drawer {
 	createNewFeature: (id: string, start: LngLat) => Feature<Geometry>;
 	draw: (ev: MapMouseEvent, feature: Feature<Geometry, GeoJsonProperties>) => DrawResult;
-	canAppend: (feature: Feature<Geometry, GeoJsonProperties>) => boolean;
+	canAppend: (lngLat: LngLat, feature: Feature<Geometry, GeoJsonProperties>) => boolean;
 	startAppend: (
+		lngLat: LngLat,
 		feature: Feature<Geometry, GeoJsonProperties>
 	) => Feature<Geometry, GeoJsonProperties>;
 }
@@ -121,8 +122,8 @@ export function useMapDrawing(routeSource: string) {
 					const id = uid.rnd();
 
 					const highlighted = get(highlight);
-					if (highlighted && drawStrategy.canAppend(highlighted)) {
-						currentFeature = drawStrategy.startAppend(highlighted);
+					if (highlighted && drawStrategy.canAppend(ev.lngLat, highlighted)) {
+						currentFeature = drawStrategy.startAppend(ev.lngLat, highlighted);
 					} else {
 						currentFeature = drawStrategy.createNewFeature(id, ev.lngLat);
 						setNewFeature(currentFeature);

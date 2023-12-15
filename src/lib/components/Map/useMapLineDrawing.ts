@@ -2,7 +2,8 @@ import { drawColor, drawWidth } from '$lib/stores/useMapDrawingStore';
 import type { Feature, GeoJsonProperties, Geometry, MultiLineString } from 'geojson';
 import { type Map, LngLat, type LngLatLike, type MapMouseEvent } from 'maplibre-gl';
 import { get } from 'svelte/store';
-import { pixelDistance, type DrawResult } from './useMapDrawing';
+import { pixelDistance, type DrawResult, type Drawer } from './useMapDrawing';
+import * as turf from '@turf/turf';
 
 export function isMultilineStringFeature(feature: Feature): feature is Feature<MultiLineString> {
 	return feature.geometry.type === 'MultiLineString';
@@ -28,7 +29,7 @@ function calcNextCoordinate(ev: MapMouseEvent & Object, map: Map, geometry: Mult
 	return undefined;
 }
 
-export function useMapLineDrawing() {
+export function useMapLineDrawing(): Drawer {
 	function draw(ev: MapMouseEvent, feature: Feature<Geometry, GeoJsonProperties>): DrawResult {
 		if (feature && isMultilineStringFeature(feature)) {
 			const nextCoords = calcNextCoordinate(ev, ev.target, feature.geometry);
@@ -66,15 +67,17 @@ export function useMapLineDrawing() {
 		return newRoute;
 	}
 
-	function canAppend(feature: Feature<Geometry, GeoJsonProperties>): boolean {
+	function canAppend(lngLat: LngLat, feature: Feature<Geometry, GeoJsonProperties>): boolean {
 		return isMultilineStringFeature(feature);
 	}
 
 	function startAppend(
+		lngLat: LngLat,
 		feature: Feature<Geometry, GeoJsonProperties>
 	): Feature<Geometry, GeoJsonProperties> {
 		if (isMultilineStringFeature(feature)) {
-			feature.geometry.coordinates.push([]);
+			const nearest = turf.nearestPointOnLine(feature, lngLat.toArray());
+			feature.geometry.coordinates.push([nearest.geometry.coordinates]);
 		}
 
 		return feature;
