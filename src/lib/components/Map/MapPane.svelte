@@ -3,16 +3,15 @@
 	import { Map } from 'maplibre-gl';
 	import { onDestroy, onMount } from 'svelte';
 	import { PUBLIC_MAPTILER_API_KEY } from '$env/static/public';
-	import { Locate, LocateFixed, ZoomIn, ZoomOut } from 'lucide-svelte';
+	import { Locate, LocateFixed, Radar, ZoomIn, ZoomOut } from 'lucide-svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import { Button } from '$lib/components/ui/button';
 	import MapActionBar from '$lib/components/Map/MapActionBar.svelte';
-	import { usePositionStore } from '$lib/stores/usePositionStore';
-	import type { Unsubscriber } from 'svelte/store';
 	import type { MapSchema } from '$lib/db/schema';
 	import { useMapPosition } from './useMapPosition';
 	import { useMapDrawing } from './useMapDrawing';
 	import { featureCollection } from '$lib/stores/useMapDrawingStore';
+	import { get } from 'svelte/store';
 
 	let map: Map | undefined;
 
@@ -21,12 +20,18 @@
 	const hightlightLayer = 'route-hover';
 
 	const { drawMode, initDrawing, undoLastFeature, initHighlighting } = useMapDrawing(routeSource);
-	const { positionStore, errorStore, startWatch } = usePositionStore();
-	const { setMarker, removeMarker } = useMapPosition();
+	const {
+		positionStore,
+		positionStateStore,
+		errorStore,
+		startWatchingPosition,
+		stopWatchingPosition,
+		clearError
+	} = useMapPosition();
 
 	export let campaign: MapSchema;
 
-	drawMode.subscribe((drawMode) => {
+	const drawModeUnsubscriber = drawMode.subscribe((drawMode) => {
 		if (!map) return;
 
 		if (drawMode === 'move') {
@@ -38,48 +43,17 @@
 		}
 	});
 
-	let positionUnsubscriber: Unsubscriber | undefined = undefined;
-	let positionErrorUnsubscriber: Unsubscriber | undefined;
-	let positionError: GeolocationPositionError | undefined = undefined;
-	function startWatchingPosition() {
-		positionUnsubscriber = positionStore.subscribe((pos) => {
-			if (!pos || !map) return;
+	$: hasPositionError = !!$errorStore;
 
-			if (!positionUnsubscriber) {
-				// fly to point only fro the first time
-				map.flyTo({
-					center: { lng: pos.coords.longitude, lat: pos.coords.latitude },
-					animate: true
-				});
-			}
-
-			setMarker(map, pos.coords);
-		});
-		positionErrorUnsubscriber = errorStore.subscribe((err) => {
-			positionError = err;
-			if (err) {
-				stopWatchingPosition();
-			}
-		});
-
-		startWatch();
-	}
-
-	function stopWatchingPosition() {
-		if (positionErrorUnsubscriber) {
-			positionErrorUnsubscriber();
-			positionErrorUnsubscriber = undefined;
+	const positionStateUnsubscriber = positionStateStore.subscribe((positionState) => {
+		const pos = get(positionStore);
+		if (positionState === 'active' && pos && map) {
+			map.flyTo({
+				center: { lng: pos.coords.longitude, lat: pos.coords.latitude },
+				animate: true
+			});
 		}
-
-		if (positionUnsubscriber) {
-			positionUnsubscriber();
-			positionUnsubscriber = undefined;
-		}
-
-		if (map) {
-			removeMarker(map);
-		}
-	}
+	});
 
 	onMount(() => {
 		map = new Map({
@@ -145,7 +119,12 @@
 	});
 
 	onDestroy(() => {
-		stopWatchingPosition();
+		if (map) {
+			stopWatchingPosition(map);
+		}
+
+		drawModeUnsubscriber();
+		positionStateUnsubscriber();
 	});
 </script>
 
@@ -159,30 +138,27 @@
 		<Button size="icon" variant="ghost" on:click={() => map?.zoomOut()}><ZoomOut /></Button>
 		<Button
 			size="icon"
-			variant={positionUnsubscriber ? 'default' : 'ghost'}
-			on:click={() => (positionUnsubscriber ? stopWatchingPosition() : startWatchingPosition())}
+			variant={$positionStateStore === 'inactive' ? 'ghost' : 'default'}
+			on:click={() =>
+				$positionStateStore === 'inactive' ? startWatchingPosition(map) : stopWatchingPosition(map)}
 		>
-			{#if positionUnsubscriber}
+			{#if $positionStateStore === 'active'}
 				<LocateFixed />
+			{:else if $positionStateStore === 'searching'}
+				<Radar />
 			{:else}
-				<Locate />{/if}
+				<Locate />
+			{/if}
 		</Button>
 	</div>
 </div>
 
-<AlertDialog.Root
-	open={!!positionError}
-	onOpenChange={(value) => {
-		if (!value) {
-			positionError = undefined;
-		}
-	}}
->
+<AlertDialog.Root open={hasPositionError} onOpenChange={(value) => clearError()}>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
 			<AlertDialog.Title>Position konnte nicht ermittelt werden</AlertDialog.Title>
 			<AlertDialog.Description>
-				{positionError?.code}: {positionError?.message}
+				{$errorStore?.code}: {$errorStore?.message}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>

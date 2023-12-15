@@ -1,5 +1,9 @@
 import { GeoJSONSource, Map, Marker, type GeoJSONSourceSpecification } from 'maplibre-gl';
 import * as turf from '@turf/turf';
+import { usePositionStore } from '$lib/stores/usePositionStore';
+import { writable, type Unsubscriber, readonly } from 'svelte/store';
+
+type PositionWatchState = 'inactive' | 'searching' | 'active';
 
 const AccuracyPositionSource = 'accuracy-position';
 const AccuracyPositionLayer = 'accuracy-position-circle-layer';
@@ -13,7 +17,50 @@ const createNewMarker = () => {
 };
 
 export const useMapPosition = () => {
+	const positionStateStore = writable<PositionWatchState>('inactive');
+
+	let positionUnsubscriber: Unsubscriber | undefined = undefined;
+	let positionErrorUnsubscriber: Unsubscriber | undefined;
+	const { positionStore, errorStore, startWatch, clearError } = usePositionStore();
+
 	let marker: Marker | undefined = undefined;
+
+	function startWatchingPosition(map?: Map) {
+		if (!map) return;
+
+		positionUnsubscriber = positionStore.subscribe((pos) => {
+			if (!pos) return;
+
+			positionStateStore.set('active');
+			setMarker(map, pos.coords);
+		});
+		positionErrorUnsubscriber = errorStore.subscribe((err) => {
+			if (!err) return;
+
+			stopWatchingPosition(map);
+		});
+
+		positionStateStore.set('searching');
+		startWatch();
+	}
+
+	function stopWatchingPosition(map?: Map) {
+		if (!map) return;
+
+		positionStateStore.set('inactive');
+
+		if (positionErrorUnsubscriber) {
+			positionErrorUnsubscriber();
+		}
+
+		if (positionUnsubscriber) {
+			positionUnsubscriber();
+		}
+
+		if (map) {
+			removeMarker(map);
+		}
+	}
 
 	function setMarker(map: Map, position: GeolocationCoordinates) {
 		if (!marker) {
@@ -89,7 +136,11 @@ export const useMapPosition = () => {
 	}
 
 	return {
-		setMarker,
-		removeMarker
+		positionStore,
+		errorStore,
+		positionStateStore: readonly(positionStateStore),
+		startWatchingPosition,
+		stopWatchingPosition,
+		clearError
 	};
 };

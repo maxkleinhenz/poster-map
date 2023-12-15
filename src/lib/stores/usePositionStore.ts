@@ -21,6 +21,7 @@ function successCallback(position: GeolocationPosition) {
 
 function errorCallback(positionError: GeolocationPositionError) {
 	errorStore.set(positionError);
+	stopWatch();
 }
 
 function startWatch() {
@@ -38,7 +39,12 @@ function stopWatch() {
 	const id = get(watchIdStore);
 	if (id) {
 		navigator.geolocation.clearWatch(id);
+		watchIdStore.set(0);
 	}
+}
+
+function clearError() {
+	errorStore.set(undefined);
 }
 
 export const usePositionStore = () => {
@@ -47,6 +53,7 @@ export const usePositionStore = () => {
 		errorStore: readonly(errorStore),
 		isWatchtingStore: readonly(isWatchingStore),
 		startWatch,
-		stopWatch
+		stopWatch,
+		clearError
 	};
 };
