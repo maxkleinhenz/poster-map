@@ -5,6 +5,7 @@ import { useMapHighlighting } from './useMapHighlighting';
 import {
 	drawColor,
 	drawMode,
+	drawOpacity,
 	drawWidth,
 	featureCollection,
 	isDrawing
@@ -14,20 +15,21 @@ import type { GeoJSONSource, LngLat, Map, MapMouseEvent } from 'maplibre-gl';
 
 export type DrawMode = 'move' | 'pen' | 'highlighter' | 'circle' | 'polygon';
 
-const isDrawMouseButton = (ev: MapMouseEvent) => ev.originalEvent.buttons === 1;
-
-const uid = new ShortUniqueId({
-	length: 16,
-	dictionary: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-});
-
 export type DrawResult = {
 	hasCoordinates: boolean;
 	isFinished: boolean;
 };
 
+export type NewFeatureOptions = {
+	id: string;
+	start: LngLat;
+	color: string;
+	width: number;
+	opacity: number;
+};
+
 export interface Drawer {
-	createNewFeature: (id: string, start: LngLat) => Feature<Geometry>;
+	createNewFeature: (opts: NewFeatureOptions) => Feature<Geometry>;
 	draw: (ev: MapMouseEvent, feature: Feature<Geometry, GeoJsonProperties>) => DrawResult;
 	canAppend: (lngLat: LngLat, feature: Feature<Geometry, GeoJsonProperties>) => boolean;
 	startAppend: (
@@ -35,6 +37,16 @@ export interface Drawer {
 		feature: Feature<Geometry, GeoJsonProperties>
 	) => Feature<Geometry, GeoJsonProperties>;
 }
+
+const isDrawMouseButton = (ev: MapMouseEvent) => ev.originalEvent.buttons === 1;
+
+const uid = new ShortUniqueId({
+	length: 16,
+	dictionary: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+});
+
+export const DrawWidthMax = 10;
+const DrawWidthScale = Array.from({ length: DrawWidthMax }, (_, i) => (i + 1) * Math.sqrt(i + 1));
 
 const minPixelDistances = 15;
 export const pixelDistance = (
@@ -125,7 +137,13 @@ export function useMapDrawing(routeSource: string) {
 					if (highlighted && drawStrategy.canAppend(ev.lngLat, highlighted)) {
 						currentFeature = drawStrategy.startAppend(ev.lngLat, highlighted);
 					} else {
-						currentFeature = drawStrategy.createNewFeature(id, ev.lngLat);
+						currentFeature = drawStrategy.createNewFeature({
+							id,
+							start: ev.lngLat,
+							color: get(drawColor),
+							width: DrawWidthScale[get(drawWidth) - 1],
+							opacity: get(drawOpacity)
+						});
 						setNewFeature(currentFeature);
 					}
 

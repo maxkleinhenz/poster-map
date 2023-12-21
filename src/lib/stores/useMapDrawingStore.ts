@@ -8,5 +8,6 @@ export const featureCollection = writable<FeatureCollection>({
 });
 export const drawMode = writable<DrawMode>('move');
 export const drawColor = writable<string>('#000');
-export const drawWidth = writable<number>(8);
+export const drawWidth = writable<number>(5);
+export const drawOpacity = writable<number>(70);
 export const isDrawing = writable<boolean>(false);

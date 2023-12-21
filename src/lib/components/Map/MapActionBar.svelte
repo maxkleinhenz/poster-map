@@ -19,7 +19,8 @@
 	import MapColorButton from './MapColorButton.svelte';
 	import { Slider } from '$lib/components/ui/slider';
 	import { createEventDispatcher } from 'svelte';
-	import { drawColor, drawMode, drawWidth } from '$lib/stores/useMapDrawingStore';
+	import { drawColor, drawMode, drawOpacity, drawWidth } from '$lib/stores/useMapDrawingStore';
+	import { DrawWidthMax } from './useMapDrawing';
 
 	const dispatch = createEventDispatcher<{
 		undo: null;
@@ -149,10 +150,22 @@
 							<div class="flex flex-wrap gap-3">
 								<Slider
 									min={1}
-									max={10}
+									max={DrawWidthMax}
 									value={[$drawWidth]}
 									onValueChange={(v) => drawWidth.set(v[0])}
 									step={1}
+								></Slider>
+							</div>
+						</section>
+						<section class="space-y-3">
+							<h4 class="font-medium leading-none">Deckkraft ({$drawOpacity}%)</h4>
+							<div class="flex flex-wrap gap-3">
+								<Slider
+									min={10}
+									max={100}
+									value={[$drawOpacity]}
+									onValueChange={(v) => drawOpacity.set(v[0])}
+									step={10}
 								></Slider>
 							</div>
 						</section>

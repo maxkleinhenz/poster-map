@@ -1,8 +1,11 @@
-import { drawColor, drawWidth } from '$lib/stores/useMapDrawingStore';
 import type { Feature, GeoJsonProperties, Geometry, MultiLineString } from 'geojson';
 import { type Map, LngLat, type LngLatLike, type MapMouseEvent } from 'maplibre-gl';
-import { get } from 'svelte/store';
-import { pixelDistance, type DrawResult, type Drawer } from './useMapDrawing';
+import {
+	pixelDistance,
+	type DrawResult,
+	type Drawer,
+	type NewFeatureOptions
+} from './useMapDrawing';
 import * as turf from '@turf/turf';
 
 export function isMultilineStringFeature(feature: Feature): feature is Feature<MultiLineString> {
@@ -49,18 +52,16 @@ export function useMapLineDrawing(): Drawer {
 		};
 	}
 
-	function createNewFeature(
-		id: string,
-		start: LngLat
-	): Feature<MultiLineString, GeoJsonProperties> {
+	function createNewFeature(opts: NewFeatureOptions): Feature<MultiLineString, GeoJsonProperties> {
 		const newRoute: Feature<MultiLineString> = {
 			type: 'Feature',
-			geometry: { type: 'MultiLineString', coordinates: [[start.toArray()]] },
-			id: id,
+			geometry: { type: 'MultiLineString', coordinates: [[opts.start.toArray()]] },
+			id: opts.id,
 			properties: {
 				appearance: {
-					color: get(drawColor),
-					width: get(drawWidth)
+					color: opts.color,
+					width: opts.width,
+					opacity: opts.opacity / 100
 				}
 			}
 		};

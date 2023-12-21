@@ -120,7 +120,8 @@
 				},
 				paint: {
 					'line-color': ['get', 'color', ['get', 'appearance']],
-					'line-width': ['get', 'width', ['get', 'appearance']]
+					'line-width': ['get', 'width', ['get', 'appearance']],
+					'line-opacity': ['get', 'opacity', ['get', 'appearance']]
 				}
 			});
 
