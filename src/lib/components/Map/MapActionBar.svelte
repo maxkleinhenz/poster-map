@@ -21,13 +21,14 @@
 	import { createEventDispatcher } from 'svelte';
 	import { drawColor, drawMode, drawOpacity, drawWidth } from '$lib/stores/useMapDrawingStore';
 	import { DrawWidthMax } from './useMapDrawing';
+	import AppContainer from '../App/AppContainer.svelte';
 
 	const dispatch = createEventDispatcher<{
 		undo: null;
 	}>();
 </script>
 
-<div class="w-full flex bg-white shadow-md p-2 rounded-lg items-center gap-5">
+<AppContainer class="w-full flex items-center gap-5">
 	<div>
 		<Button href="/" variant="ghost"><ChevronLeft /> Zum Dashboard</Button>
 	</div>
@@ -220,4 +221,4 @@
 			<Settings />
 		</Button>
 	</div>
-</div>
+</AppContainer>

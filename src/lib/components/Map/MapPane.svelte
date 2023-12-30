@@ -12,6 +12,7 @@
 	import { useMapDrawing, type DrawMode } from './useMapDrawing';
 	import { featureCollection } from '$lib/stores/useMapDrawingStore';
 	import { get } from 'svelte/store';
+	import AppContainer from '../App/AppContainer.svelte';
 
 	let map: Map | undefined;
 
