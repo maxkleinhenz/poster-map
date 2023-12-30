@@ -10,6 +10,7 @@
 		Move,
 		PenLine,
 		Radius,
+		Save,
 		Settings,
 		Share2,
 		Undo,
@@ -25,6 +26,7 @@
 
 	const dispatch = createEventDispatcher<{
 		undo: null;
+		save: null;
 	}>();
 </script>
 
@@ -209,6 +211,11 @@
 				on:click={() => dispatch('undo')}
 			>
 				<Undo />
+			</Button>
+		</div>
+		<div class="border-l border-primary flex gap-2 pl-2">
+			<Button variant="ghost" size="icon" title="dev: Speichern" on:click={() => dispatch('save')}>
+				<Save />
 			</Button>
 		</div>
 	</div>
