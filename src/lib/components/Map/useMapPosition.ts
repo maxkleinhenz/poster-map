@@ -1,9 +1,9 @@
 import { GeoJSONSource, Map, Marker, type GeoJSONSourceSpecification } from 'maplibre-gl';
 import * as turf from '@turf/turf';
 import { usePositionStore } from '$lib/stores/usePositionStore';
-import { writable, type Unsubscriber, readonly } from 'svelte/store';
+import { writable, type Unsubscriber, readonly, get } from 'svelte/store';
 
-type PositionWatchState = 'inactive' | 'searching' | 'active';
+type PositionWatchState = 'inactive' | 'searching' | 'active' | 'follow';
 
 const AccuracyPositionSource = 'accuracy-position';
 const AccuracyPositionLayer = 'accuracy-position-circle-layer';
@@ -25,14 +25,44 @@ export const useMapPosition = () => {
 
 	let marker: Marker | undefined = undefined;
 
+	function onMapDrag() {
+		if (get(positionStateStore) === 'follow') {
+			positionStateStore.set('active');
+		}
+	}
+
+	function flyToLocation(map: Map, pos: GeolocationPosition) {
+		map.flyTo({
+			center: { lng: pos.coords.longitude, lat: pos.coords.latitude },
+			animate: true
+		});
+	}
+
+	function enableFollow(map?: Map) {
+		if (!map) return;
+
+		const pos = get(positionStore);
+
+		if (pos && get(positionStateStore) === 'active') {
+			positionStateStore.set('follow');
+			flyToLocation(map, pos);
+		}
+	}
+
 	function startWatchingPosition(map?: Map) {
 		if (!map) return;
+
+		map.on('drag', onMapDrag);
 
 		positionUnsubscriber = positionStore.subscribe((pos) => {
 			if (!pos) return;
 
-			positionStateStore.set('active');
 			setMarker(map, pos.coords);
+
+			if (get(positionStateStore) !== 'active') {
+				positionStateStore.set('follow');
+				flyToLocation(map, pos);
+			}
 		});
 		positionErrorUnsubscriber = errorStore.subscribe((err) => {
 			if (!err) return;
@@ -58,6 +88,7 @@ export const useMapPosition = () => {
 		}
 
 		if (map) {
+			map.off('drag', onMapDrag);
 			removeMarker(map);
 		}
 	}
@@ -141,6 +172,7 @@ export const useMapPosition = () => {
 		positionStateStore: readonly(positionStateStore),
 		startWatchingPosition,
 		stopWatchingPosition,
+		enableFollow,
 		clearError
 	};
 };

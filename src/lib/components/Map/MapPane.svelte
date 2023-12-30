@@ -21,11 +21,11 @@
 
 	const { drawMode, initDrawing, undoLastFeature, initHighlighting } = useMapDrawing(routeSource);
 	const {
-		positionStore,
 		positionStateStore,
 		errorStore,
 		startWatchingPosition,
 		stopWatchingPosition,
+		enableFollow,
 		clearError
 	} = useMapPosition();
 
@@ -60,15 +60,15 @@
 
 	$: hasPositionError = !!$errorStore;
 
-	const positionStateUnsubscriber = positionStateStore.subscribe((positionState) => {
-		const pos = get(positionStore);
-		if (positionState === 'active' && pos && map) {
-			map.flyTo({
-				center: { lng: pos.coords.longitude, lat: pos.coords.latitude },
-				animate: true
-			});
+	function onLocationButtonClick() {
+		if ($positionStateStore === 'inactive') {
+			startWatchingPosition(map);
+		} else if ($positionStateStore === 'active') {
+			enableFollow(map);
+		} else {
+			stopWatchingPosition(map);
 		}
-	});
+	}
 
 	onMount(() => {
 		map = new Map({
@@ -140,7 +140,6 @@
 		}
 
 		drawModeUnsubscriber();
-		positionStateUnsubscriber();
 	});
 </script>
 
@@ -159,16 +158,15 @@
 		<Button size="icon" variant="ghost" on:click={() => map?.zoomOut()}><ZoomOut /></Button>
 		<Button
 			size="icon"
-			variant={$positionStateStore === 'inactive' ? 'ghost' : 'default'}
-			on:click={() =>
-				$positionStateStore === 'inactive' ? startWatchingPosition(map) : stopWatchingPosition(map)}
+			variant={$positionStateStore === 'follow' ? 'default' : 'ghost'}
+			on:click={onLocationButtonClick}
 		>
-			{#if $positionStateStore === 'active'}
-				<LocateFixed />
+			{#if $positionStateStore === 'inactive'}
+				<Locate />
 			{:else if $positionStateStore === 'searching'}
 				<Radar />
 			{:else}
-				<Locate />
+				<LocateFixed />
 			{/if}
 		</Button>
 	</div>
