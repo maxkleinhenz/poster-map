@@ -97,11 +97,28 @@ export function useMapDrawing(routeSource: string) {
 		}
 	}
 
+	function onMouseUp(ev: MapMouseEvent) {
+		let nodeName =
+			ev.originalEvent.relatedTarget && 'nodeName' in ev.originalEvent.relatedTarget
+				? (ev.originalEvent.relatedTarget.nodeName as string).toLowerCase()
+				: '';
+
+		if (
+			ev.originalEvent.type.toLowerCase() === 'mouseup' ||
+			(ev.originalEvent.type.toLowerCase() === 'mouseout' && nodeName === 'html')
+		) {
+			finishDrawing();
+		}
+	}
+
 	function finishDrawing() {
 		isDrawing.set(false);
 		currentFeature = undefined;
 		drawStrategy = undefined;
+
 		mymap?.off('mousemove', onMoveDrawing);
+		mymap?.off('mouseup', onMouseUp);
+		mymap?.off('mouseout', onMouseUp);
 	}
 
 	function undoLastFeature() {
@@ -148,13 +165,9 @@ export function useMapDrawing(routeSource: string) {
 					}
 
 					map?.on('mousemove', onMoveDrawing);
-					map?.once('mouseup', (ev) => {
-						finishDrawing();
-					});
 
-					map?.once('mouseout', (ev) => {
-						finishDrawing();
-					});
+					map?.on('mouseup', onMouseUp);
+					map?.on('mouseout', onMouseUp);
 				}
 			}
 		});
