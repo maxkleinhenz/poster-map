@@ -4,14 +4,33 @@ import { eq } from 'drizzle-orm';
 import type { z } from 'zod';
 
 export async function getMap(id: number) {
-	const map = await db.query.maps.findFirst({
-		where: eq(maps.id, id)
-	});
-	return map;
+	return {
+		id: 1,
+		name: 'Test',
+		description: 'Test',
+		lat: 13.7373,
+		lng: 51.0504,
+		created_at: new Date()
+	};
+
+	// const map = await db.query.maps.findFirst({
+	// 	where: eq(maps.id, id)
+	// });
+	// return map;
 }
 
 export async function getMaps(): Promise<MapSchema[]> {
-	return await db.query.maps.findMany();
+	return [
+		{
+			id: 1,
+			name: 'Test',
+			description: 'Test',
+			lat: 13.7373,
+			lng: 51.0504,
+			created_at: new Date()
+		}
+	];
+	// return await db.query.maps.findMany();
 }
 
 export async function insertMap(input: z.infer<typeof insertMapSchema>) {
