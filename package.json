@@ -10,9 +10,9 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --plugin-search-dir . --check . && eslint .",
 		"format": "prettier --plugin-search-dir . --write .",
-		"db:generate": "drizzle-kit generate:mysql",
-		"db:push": "drizzle-kit push:mysql",
-		"db:up": "drizzle-kit up:mysql"
+		"db:generate": "drizzle-kit generate",
+		"db:push": "drizzle-kit push",
+		"db:up": "drizzle-kit up"
 	},
 	"devDependencies": {
 		"@fontsource/fira-mono": "^5.0.14",
@@ -24,7 +24,7 @@
 		"@typescript-eslint/eslint-plugin": "^6.21.0",
 		"@typescript-eslint/parser": "^6.21.0",
 		"autoprefixer": "^10.4.20",
-		"drizzle-kit": "0.20.9",
+		"drizzle-kit": "^0.24.2",
 		"eslint": "^8.57.0",
 		"eslint-config-prettier": "^9.1.0",
 		"eslint-plugin-svelte": "^2.43.0",
@@ -40,14 +40,14 @@
 		"vite-plugin-cjs-interop": "^2.1.2"
 	},
 	"dependencies": {
-		"@planetscale/database": "^1.19.0",
 		"@trpc/client": "^10.45.2",
 		"@trpc/server": "^10.45.2",
 		"@turf/turf": "^6.5.0",
+		"@vercel/postgres": "^0.10.0",
 		"bits-ui": "^0.12.0",
 		"clsx": "^2.1.1",
 		"dotenv": "^16.4.5",
-		"drizzle-orm": "^0.29.5",
+		"drizzle-orm": "^0.33.0",
 		"drizzle-zod": "^0.5.1",
 		"formsnap": "^0.4.4",
 		"lucide-svelte": "^0.303.0",

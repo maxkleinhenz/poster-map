@@ -1,14 +1,14 @@
-import { mysqlTable, serial, text, timestamp, float } from 'drizzle-orm/mysql-core';
+import { integer, pgTable, real, serial, text, timestamp } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { asOptionalString } from './helper';
 
-export const maps = mysqlTable('maps', {
-	id: serial('id').autoincrement().primaryKey(),
+export const maps = pgTable('maps', {
+	id: serial('id').primaryKey(),
 	name: text('name').notNull(),
 	description: text('description'),
-	lat: float('lat').notNull(),
-	lng: float('lng').notNull(),
+	lat: real('lat').notNull(),
+	lng: real('lng').notNull(),
 	created_at: timestamp('created_at').defaultNow()
 });
 
