@@ -30,6 +30,8 @@
 		undo: null;
 		save: null;
 	}>();
+
+	let saveOpen = false;
 </script>
 
 <AppContainer
@@ -174,13 +176,13 @@
 						<section class="space-y-3">
 							<h4 class="font-medium leading-none">Deckkraft ({$drawOpacity}%)</h4>
 							<div class="flex flex-wrap gap-3">
-								<!-- <Slider
+								<Slider
 									min={10}
 									max={100}
 									value={[$drawOpacity]}
 									onValueChange={(v) => drawOpacity.set(v[0])}
 									step={10}
-								></Slider> -->
+								></Slider>
 							</div>
 						</section>
 					</div>
@@ -236,7 +238,7 @@
 
 	<div class="grid gap-2">
 		<div class="h-min border-b border-primary"></div>
-		<Popover portal={null}>
+		<Popover bind:open={saveOpen} portal="#map-action-bar">
 			<PopoverTrigger asChild let:builder>
 				<Button
 					title="Speichern"
