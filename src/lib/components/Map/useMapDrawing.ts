@@ -13,7 +13,7 @@ import {
 import { useMapLineDrawing } from './useMapLineDrawing';
 import type { GeoJSONSource, LngLat, Map, MapMouseEvent } from 'maplibre-gl';
 
-export type DrawMode = 'move' | 'pen' | 'highlighter' | 'circle' | 'polygon';
+export type DrawMode = 'move' | 'pen' | 'highlighter' | 'circle' | 'polygon' | 'erase';
 
 export type DrawResult = {
 	hasCoordinates: boolean;
@@ -139,11 +139,11 @@ export function useMapDrawing(routeSource: string) {
 		map.on('mousedown', (ev) => {
 			if (isDrawMouseButton(ev) && !get(isDrawing) && !currentFeature) {
 				switch (get(drawMode)) {
-					case 'move':
-						ev.target.getCanvas().style.cursor = 'grabbing';
-						ev.target.once('mouseup', () => {
-							ev.target.getCanvas().style.cursor = 'grab';
-						});
+					// case 'move':
+					// 	ev.target.getCanvas().style.cursor = 'grabbing';
+					// 	ev.target.once('mouseup', () => {
+					// 		ev.target.getCanvas().style.cursor = 'grab';
+					// 	});
 					case 'pen':
 						drawStrategy = useMapLineDrawing();
 						break;

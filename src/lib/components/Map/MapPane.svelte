@@ -50,7 +50,7 @@
 
 	const drawModeUnsubscriber = drawMode.subscribe((drawMode) => {
 		if (!map) return;
-
+		console.log('unsubscribe', drawMode);
 		if (drawMode === 'move') {
 			map.dragPan.enable();
 			map.getCanvas().style.cursor = 'grab';
@@ -159,7 +159,7 @@
 	</div>
 	<div class="absolute top-3 right-3 flex self-end gap-4 items-start pointer-events-none">
 		<AppContainer
-			class={`flex flex-col gap-2 ${$isDrawing ? 'pointer-events-none' : 'pointer-events-auto'}`}
+			class={cn('flex flex-col gap-2', $isDrawing ? 'pointer-events-none' : 'pointer-events-auto')}
 		>
 			<Button size="icon" variant="ghost" on:click={() => map?.zoomIn()}><ZoomIn /></Button>
 			<Button size="icon" variant="ghost" on:click={() => map?.zoomOut()}><ZoomOut /></Button>
