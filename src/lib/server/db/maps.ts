@@ -28,6 +28,14 @@ export async function getMaps(): Promise<MapSchema[]> {
 			lat: 13.7373,
 			lng: 51.0504,
 			created_at: new Date()
+		},
+		{
+			id: 2,
+			name: 'Test2',
+			description: 'Test2',
+			lat: 13.7373,
+			lng: 51.0504,
+			created_at: new Date()
 		}
 	];
 	// return await db.query.maps.findMany();

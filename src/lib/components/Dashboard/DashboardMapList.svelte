@@ -112,7 +112,7 @@
 			{#each mapList as item}
 				<a
 					href="/map/{item.id}"
-					class="first:rounded-t-lg last:rounded-b-lg flex p-3 border-t-2 first:border-0 hover:bg-slate-200 items-center"
+					class="flex p-3 border-t-2 first:border-0 hover:bg-slate-200 items-center"
 				>
 					<div class="flex-1">
 						<div class="font-medium">{item.name}</div>
@@ -120,9 +120,9 @@
 							<div>{item.description}</div>
 						{/if}
 					</div>
-					<div>
-						<Button variant="secondary" href="/map/{item.id}">Anzeigen <ChevronRight /></Button>
-					</div>
+					<span class="flex">
+						Anzeigen <ChevronRight />
+					</span>
 				</a>
 			{/each}
 		{:else}
