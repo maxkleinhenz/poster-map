@@ -1,22 +1,21 @@
 <script lang="ts">
-	import 'maplibre-gl/dist/maplibre-gl.css';
-	import { Map } from 'maplibre-gl';
-	import { onDestroy, onMount } from 'svelte';
 	import { PUBLIC_MAPTILER_API_KEY } from '$env/static/public';
-	import { Loader2, Locate, LocateFixed, Radar, ZoomIn, ZoomOut } from 'lucide-svelte';
+	import MapActionBar from '$lib/components/Map/MapActionBar.svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import { Button } from '$lib/components/ui/button';
-	import MapActionBar from '$lib/components/Map/MapActionBar.svelte';
 	import type { MapSchema } from '$lib/db/schema';
-	import { useMapPosition } from './useMapPosition';
-	import { useMapDrawing, type DrawMode } from './useMapDrawing';
 	import { featureCollection, isDrawing } from '$lib/stores/useMapDrawingStore';
+	import { cn } from '$lib/utils';
+	import { Locate, LocateFixed, Radar, ZoomIn, ZoomOut } from 'lucide-svelte';
+	import { Map } from 'maplibre-gl';
+	import 'maplibre-gl/dist/maplibre-gl.css';
+	import { onDestroy, onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import AppContainer from '../App/AppContainer.svelte';
-	import { fade } from 'svelte/transition';
+	import { useMapDrawing, type DrawMode } from './useMapDrawing';
+	import { useMapPosition } from './useMapPosition';
 
 	let map: Map | undefined;
-	let isSaving = false;
 
 	const routeSource = 'route-source';
 	const routeLayer = 'route-layer';
@@ -153,51 +152,31 @@
 
 <div class="h-full relative">
 	<div id="map" class="h-full" />
-	<div class="flex flex-col absolute top-3 inset-x-3 space-y-4 pointer-events-none">
-		<div class={`${$isDrawing ? 'pointer-events-none' : 'pointer-events-auto'}`}>
-			<MapActionBar
-				on:undo={() => undoLastFeature()}
-				on:save={() => {
-					isSaving = true;
-					setTimeout(() => (isSaving = false), 2000);
-				}}
-			/>
+	<div class="flex flex-col absolute inset-y-0 p-2 space-y-4 pointer-events-none">
+		<div class={cn('h-full', $isDrawing ? 'pointer-events-none' : 'pointer-events-auto')}>
+			<MapActionBar on:undo={() => undoLastFeature()} on:save={() => {}} />
 		</div>
-		<div class="flex self-end gap-4 items-start pointer-events-none">
-			{#if isSaving}
-				<div
-					transition:fade={{
-						duration: 250
-					}}
-				>
-					<AppContainer
-						><div class="flex items-center">
-							<Loader2 class="mr-2 h-4 w-4 animate-spin" />
-							<span>Speichern...</span>
-						</div></AppContainer
-					>
-				</div>
-			{/if}
-			<AppContainer
-				class={`flex flex-col gap-2 ${$isDrawing ? 'pointer-events-none' : 'pointer-events-auto'}`}
+	</div>
+	<div class="absolute top-3 right-3 flex self-end gap-4 items-start pointer-events-none">
+		<AppContainer
+			class={`flex flex-col gap-2 ${$isDrawing ? 'pointer-events-none' : 'pointer-events-auto'}`}
+		>
+			<Button size="icon" variant="ghost" on:click={() => map?.zoomIn()}><ZoomIn /></Button>
+			<Button size="icon" variant="ghost" on:click={() => map?.zoomOut()}><ZoomOut /></Button>
+			<Button
+				size="icon"
+				variant={$positionStateStore === 'follow' ? 'default' : 'ghost'}
+				on:click={onLocationButtonClick}
 			>
-				<Button size="icon" variant="ghost" on:click={() => map?.zoomIn()}><ZoomIn /></Button>
-				<Button size="icon" variant="ghost" on:click={() => map?.zoomOut()}><ZoomOut /></Button>
-				<Button
-					size="icon"
-					variant={$positionStateStore === 'follow' ? 'default' : 'ghost'}
-					on:click={onLocationButtonClick}
-				>
-					{#if $positionStateStore === 'inactive'}
-						<Locate />
-					{:else if $positionStateStore === 'searching'}
-						<Radar />
-					{:else}
-						<LocateFixed />
-					{/if}
-				</Button>
-			</AppContainer>
-		</div>
+				{#if $positionStateStore === 'inactive'}
+					<Locate />
+				{:else if $positionStateStore === 'searching'}
+					<Radar />
+				{:else}
+					<LocateFixed />
+				{/if}
+			</Button>
+		</AppContainer>
 	</div>
 </div>
 
