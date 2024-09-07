@@ -113,7 +113,7 @@ importers:
         version: 4.2.19
       svelte-check:
         specifier: ^4.0.1
-        version: 4.0.1(svelte@4.2.19)(typescript@5.5.4)
+        version: 4.0.1(picomatch@3.0.1)(svelte@4.2.19)(typescript@5.5.4)
       tailwindcss:
         specifier: ^3.4.10
         version: 3.4.10
@@ -9377,7 +9377,9 @@ snapshots:
       - encoding
     optional: true
 
-  fdir@6.3.0: {}
+  fdir@6.3.0(picomatch@3.0.1):
+    optionalDependencies:
+      picomatch: 3.0.1
 
   fetch-retry@4.1.1:
     optional: true
@@ -11201,11 +11203,11 @@ snapshots:
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
-  svelte-check@4.0.1(svelte@4.2.19)(typescript@5.5.4):
+  svelte-check@4.0.1(picomatch@3.0.1)(svelte@4.2.19)(typescript@5.5.4):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.25
       chokidar: 3.6.0
-      fdir: 6.3.0
+      fdir: 6.3.0(picomatch@3.0.1)
       picocolors: 1.1.0
       sade: 1.8.1
       svelte: 4.2.19

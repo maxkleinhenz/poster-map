@@ -50,7 +50,6 @@
 
 	const drawModeUnsubscriber = drawMode.subscribe((drawMode) => {
 		if (!map) return;
-		console.log('unsubscribe', drawMode);
 		if (drawMode === 'move') {
 			map.dragPan.enable();
 			map.getCanvas().style.cursor = 'grab';

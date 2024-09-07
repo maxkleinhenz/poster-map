@@ -4,6 +4,10 @@
 
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
+	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/ui/popover';
+	import { ScrollArea } from '$lib/components/ui/scroll-area';
+	import { Slider } from '$lib/components/ui/slider';
+	import { drawColor, drawMode, drawOpacity, drawWidth } from '$lib/stores/useMapDrawingStore';
 	import {
 		ChevronsLeft,
 		Eraser,
@@ -17,13 +21,10 @@
 		Undo,
 		Waypoints
 	} from 'lucide-svelte';
-	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/ui/popover';
-	import MapColorButton from './MapColorButton.svelte';
-	import { Slider } from '$lib/components/ui/slider';
 	import { createEventDispatcher } from 'svelte';
-	import { drawColor, drawMode, drawOpacity, drawWidth } from '$lib/stores/useMapDrawingStore';
 	import AppContainer from '../App/AppContainer.svelte';
-	import { ScrollArea } from '$lib/components/ui/scroll-area';
+	import MapColorButton from './MapColorButton.svelte';
+	import { DrawWidthMax } from './useMapDrawing';
 
 	const dispatch = createEventDispatcher<{
 		undo: null;
@@ -49,7 +50,6 @@
 				variant={$drawMode === 'move' ? 'default' : 'ghost'}
 				size="icon"
 				on:click={() => {
-					console.log('click move');
 					drawMode.set('move');
 				}}
 			>
@@ -162,13 +162,13 @@
 						<section class="space-y-3">
 							<h4 class="font-medium leading-none">Stärke ({$drawWidth})</h4>
 							<div class="flex flex-wrap gap-3">
-								<!-- <Slider
+								<Slider
 									min={1}
 									max={DrawWidthMax}
 									value={[$drawWidth]}
 									onValueChange={(v) => drawWidth.set(v[0])}
 									step={1}
-								></Slider> -->
+								></Slider>
 							</div>
 						</section>
 						<section class="space-y-3">
