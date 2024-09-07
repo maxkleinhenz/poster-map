@@ -10,10 +10,15 @@
 	import { superValidateSync } from 'sveltekit-superforms/client';
 	import type { z } from 'zod';
 
+	let mapLoading = true;
 	let mapList: MapSchema[] = [];
 
 	onMount(() => {
-		trpc.getAllMaps.query().then((maps) => (mapList = maps as MapSchema[]));
+		mapLoading = true;
+		trpc.getAllMaps
+			.query()
+			.then((maps) => (mapList = maps as MapSchema[]))
+			.finally(() => (mapLoading = false));
 	});
 
 	let openNewMapDialog = false;
@@ -108,7 +113,9 @@
 		</Dialog.Root>
 	</div>
 	<div class="border-2 rounded-lg">
-		{#if mapList?.length}
+		{#if mapLoading}
+			<p>Lade Karten...</p>
+		{:else if mapList?.length}
 			{#each mapList as item}
 				<a
 					href="/map/{item.id}"

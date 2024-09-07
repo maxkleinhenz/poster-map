@@ -8,6 +8,13 @@
       "when": 1725702787996,
       "tag": "0000_jittery_blue_blade",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1725727995767,
+      "tag": "0001_aspiring_cannonball",
+      "breakpoints": true
     }
   ]
 }

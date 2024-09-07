@@ -7,7 +7,14 @@
 	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/ui/popover';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import { Slider } from '$lib/components/ui/slider';
-	import { drawColor, drawMode, drawOpacity, drawWidth } from '$lib/stores/useMapDrawingStore';
+	import type { MapSchema } from '$lib/db/schema';
+	import {
+		drawColor,
+		drawMode,
+		drawOpacity,
+		drawWidth,
+		saveFeatureCollection
+	} from '$lib/stores/useMapDrawingStore';
 	import {
 		ChevronsLeft,
 		Eraser,
@@ -26,9 +33,10 @@
 	import MapColorButton from './MapColorButton.svelte';
 	import { DrawWidthMax } from './useMapDrawing';
 
+	export let map: MapSchema;
+
 	const dispatch = createEventDispatcher<{
 		undo: null;
-		save: null;
 	}>();
 
 	let saveOpen = false;
@@ -245,7 +253,7 @@
 					builders={[builder]}
 					variant="ghost"
 					size="icon"
-					on:click={() => dispatch('save')}
+					on:click={() => saveFeatureCollection(map.id).then(() => (saveOpen = false))}
 				>
 					<Save />
 				</Button>

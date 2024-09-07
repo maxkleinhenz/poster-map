@@ -6,6 +6,7 @@
 	import type { MapSchema } from '$lib/db/schema';
 	import { featureCollection, isDrawing } from '$lib/stores/useMapDrawingStore';
 	import { cn } from '$lib/utils';
+	import type { FeatureCollection } from 'geojson';
 	import { Locate, LocateFixed, Radar, ZoomIn, ZoomOut } from 'lucide-svelte';
 	import { Map } from 'maplibre-gl';
 	import 'maplibre-gl/dist/maplibre-gl.css';
@@ -32,6 +33,7 @@
 	} = useMapPosition();
 
 	export let campaign: MapSchema;
+	$: featureCollection.set(campaign.geojson as FeatureCollection);
 
 	let tempDrawMode: DrawMode | undefined = undefined;
 	function onKeyDown(e: KeyboardEvent) {
@@ -153,7 +155,7 @@
 	<div id="map" class="h-full" />
 	<div class="flex flex-col absolute inset-y-0 p-2 space-y-4 pointer-events-none">
 		<div class={cn('h-full', $isDrawing ? 'pointer-events-none' : 'pointer-events-auto')}>
-			<MapActionBar on:undo={() => undoLastFeature()} on:save={() => {}} />
+			<MapActionBar map={campaign} on:undo={() => undoLastFeature()} />
 		</div>
 	</div>
 	<div class="absolute top-3 right-3 flex self-end gap-4 items-start pointer-events-none">

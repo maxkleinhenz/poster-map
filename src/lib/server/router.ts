@@ -1,7 +1,7 @@
+import { insertMapSchema, updateMapSchema, type MapSchema } from '$lib/db/schema';
+import { getMap, getMaps, insertMap, updateMap } from '$lib/server/db/maps';
 import { z } from 'zod';
 import { publicProcedure, router } from './context';
-import { getMap, getMaps, insertMap } from '$lib/server/db/maps';
-import { insertMapSchema, type MapSchema } from '$lib/db/schema';
 
 export const appRouter = router({
 	getMap: publicProcedure.input(z.number()).query(async (opts): Promise<MapSchema | undefined> => {
@@ -12,6 +12,9 @@ export const appRouter = router({
 	}),
 	createMap: publicProcedure.input(insertMapSchema).mutation(async (opts) => {
 		return await insertMap(opts.input);
+	}),
+	updateMap: publicProcedure.input(updateMapSchema).mutation(async (opts) => {
+		return await updateMap(opts.input.id, opts.input);
 	})
 });
 
